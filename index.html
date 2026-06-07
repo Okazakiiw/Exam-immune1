@@ -3,386 +3,1994 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>USMLE Board Master Suite - Embryology & Genetics</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Medical Student MCQ Quiz App</title>
     <style>
-        body { font-family: 'Inter', 'Sarabun', sans-serif; }
-        .animate-fadeIn { animation: fadeIn 0.25s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+        * { box-sizing: border-box; font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); margin: 0; padding: 0; }
+        
+        .header { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .header h1 { margin: 0; font-size: 1.25rem; }
+        .global-score { font-weight: bold; font-size: 1.1rem; background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 8px; }
+        
+        .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: var(--card); border-radius: 12px; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        
+        /* Menu */
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+        .menu-btn { background: var(--card); border: 2px solid var(--primary); color: var(--primary); padding: 1.5rem; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .menu-btn:hover { background: var(--primary); color: white; transform: translateY(-3px); }
+        
+        /* Quiz */
+        .progress-container { width: 100%; background: #e2e8f0; border-radius: 99px; height: 10px; margin-bottom: 1.5rem; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; }
+        .quiz-header { display: flex; justify-content: space-between; margin-bottom: 1rem; color: var(--text-muted); font-weight: bold; }
+        
+        .question-text { font-size: 1.25rem; font-weight: bold; margin-bottom: 1.5rem; line-height: 1.6; }
+        
+        .options-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .option-btn { text-align: left; padding: 1rem; border: 2px solid #e2e8f0; border-radius: 8px; background: white; font-size: 1rem; cursor: pointer; transition: all 0.2s; color: var(--text-main); }
+        .option-btn:hover:not(:disabled) { border-color: var(--primary); background: #eff6ff; }
+        .option-btn:disabled { cursor: not-allowed; }
+        
+        .option-btn.correct { background: #dcfce7; border-color: var(--success); color: #14532d; font-weight: bold; }
+        .option-btn.incorrect { background: #fee2e2; border-color: var(--danger); color: #7f1d1d; }
+        
+        .explanation-box { margin-top: 1.5rem; padding: 1.5rem; border-radius: 8px; background: #f1f5f9; display: none; border-left: 4px solid var(--primary); animation: fadeIn 0.4s; }
+        .explanation-box h3 { margin-top: 0; color: var(--primary); font-size: 1.1rem; }
+        .explanation-box p { margin: 0.5rem 0; line-height: 1.5; font-size: 0.95rem; }
+        .exp-correct { color: var(--success); font-weight: bold; }
+        .exp-incorrect { color: var(--danger); font-weight: bold; }
+        
+        .next-btn-container { margin-top: 1.5rem; text-align: right; display: none; }
+        .btn { background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .btn:hover { background: var(--primary-hover); }
+        
+        /* Summary */
+        .summary-card { text-align: center; }
+        .grade-text { font-size: 2rem; font-weight: bold; margin: 1rem 0; }
+        .grade-excellent { color: var(--success); }
+        .grade-good { color: #0284c7; }
+        .grade-fair { color: #d97706; }
+        .grade-needs-review { color: var(--danger); }
+        .summary-actions { display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
+        
+        /* Review Mode */
+        .review-item { border-bottom: 1px solid #e2e8f0; padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+        .review-item:last-child { border-bottom: none; }
+        .review-choice { margin: 0.5rem 0; padding: 0.5rem; border-radius: 4px; }
+        .review-choice.user-correct { background: #dcfce7; border-left: 3px solid var(--success); }
+        .review-choice.user-wrong { background: #fee2e2; border-left: 3px solid var(--danger); }
+        .review-choice.missed-correct { background: #e0f2fe; border-left: 3px solid var(--primary); }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body>
 
-    <header class="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white shadow-lg sticky top-0 z-50 border-b border-white/5">
-        <div class="container mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center space-x-3">
-                <div class="bg-white/10 p-2.5 rounded-xl backdrop-blur-md border border-white/10">
-                    <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold tracking-wide">USMLE Board Master Suite</h1>
-                    <p class="text-xs text-blue-200/70">Interactive Clinical Embryology Simulator</p>
-                </div>
+    <div class="header">
+        <h1>Med MCQ App</h1>
+        <div class="global-score">Global Score: <span id="globalScoreEl">0</span></div>
+    </div>
+
+    <div class="container">
+        <div id="menuView" class="card">
+            <h2>เลือกบทเรียน (Select Lecture)</h2>
+            <p>กรุณาเลือก Lecture ที่ต้องการทำข้อสอบ แต่ละบทเรียนจะทดสอบความรู้และกลไกพยาธิสภาพทางคลินิกอย่างละเอียด</p>
+            <div class="menu-grid" id="menuGrid"></div>
+        </div>
+
+        <div id="quizView" class="card hidden">
+            <div class="quiz-header">
+                <span id="lecTitle">Lec Title</span>
+                <span>ข้อ <span id="currentQNum">1</span> / <span id="totalQNum">20</span> | Score: <span id="currentScore">0</span></span>
             </div>
-            <div class="bg-white/10 px-4 py-2 rounded-xl text-sm font-semibold border border-white/5 backdrop-blur-sm">
-                คะแนนสะสมรวมทุกพาร์ท: <span id="global-score-tally" class="font-extrabold text-yellow-300 text-base">0</span> ข้อ
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="question-text" id="questionText">Question Text</div>
+            
+            <div class="options-list" id="optionsList"></div>
+            
+            <div class="explanation-box" id="explanationBox">
+                <h3>คำอธิบาย (Explanation)</h3>
+                <div id="explanationContent"></div>
+            </div>
+            
+            <div class="next-btn-container" id="nextBtnContainer">
+                <button class="btn" id="nextBtn" onclick="nextQuestion()">ข้อต่อไป (Next) &rarr;</button>
             </div>
         </div>
-    </header>
 
-    <main class="container mx-auto px-4 py-8 flex-grow max-w-5xl">
-        
-        <section id="dashboard-view" class="block animate-fadeIn">
-            <div class="bg-white rounded-2xl shadow-sm p-6 mb-8 border border-slate-200/60">
-                <h2 class="text-2xl font-bold text-slate-800 mb-1">แผงควบคุมระบบคลังข้อสอบจำลองแพทย์</h2>
-                <p class="text-slate-600 text-sm">คลิกเลือกโมดูลข้อสอบด้านล่างเพื่อเข้าสู่ระบบฝึกทำข้อสอบ ระบบจะทำการคำนวณสถิติและประเมินตัดเกรดให้อัตโนมัติครับ</p>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="parts-grid">
-                </div>
-        </section>
-
-        <section id="quiz-view" class="hidden animate-fadeIn">
-            <div class="bg-white rounded-xl shadow-sm p-4 mb-6 border border-slate-200/60 flex flex-col sm:flex-row justify-between items-center gap-4 sticky top-20 z-40">
-                <button onclick="exitToDashboard()" class="flex items-center text-sm font-bold text-slate-500 hover:text-slate-800 transition">
-                    <svg class="w-4.5 h-4.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    กลับไปแผงควบคุม
-                </button>
-                <div class="flex items-center gap-4 w-full sm:w-auto justify-end">
-                    <div class="text-sm font-bold text-slate-600">พาร์ทนี้ได้: <span id="current-score" class="text-blue-600">0</span></div>
-                    <div class="flex-grow sm:flex-grow-0 w-36 bg-slate-200 rounded-full h-2.5 overflow-hidden">
-                        <div id="progress-bar-fill" class="bg-blue-600 h-2.5 transition-all duration-300"></div>
-                    </div>
-                    <div id="progress-text" class="text-xs font-bold text-slate-400 whitespace-nowrap">ข้อที่ 1</div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-md p-6 sm:p-8 border border-slate-100 mb-6">
-                <div class="mb-6">
-                    <span id="question-category-tag" class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider">Clinical Reasoning Case</span>
-                    <h3 id="question-text" class="text-lg sm:text-xl font-bold text-slate-900 mt-4 leading-relaxed text-left">Loading...</h3>
-                </div>
-
-                <div class="space-y-3" id="options-container"></div>
-
-                <div id="explanation-panel" class="hidden mt-8 border-t border-slate-100 pt-6 animate-fadeIn">
-                    <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200/80">
-                        <div class="flex items-center space-x-2 text-indigo-800 mb-3 font-bold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <h4>คำอธิบายเชิงพยาธิสรีรวิทยาและกลไกคลินิก (Clinical Mechanism)</h4>
-                        </div>
-                        <p id="clinical-context" class="text-slate-700 text-sm mb-4 leading-relaxed bg-white p-4 rounded-xl border border-slate-100 shadow-sm font-medium text-left"></p>
-                        <div class="space-y-2 text-left" id="choice-breakdowns"></div>
-                        
-                        <div class="mt-6 flex justify-end">
-                            <button id="next-btn" onclick="nextQuestion()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl shadow-sm transition flex items-center">
-                                <span>ข้อถัดไป</span>
-                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="summary-view" class="hidden animate-fadeIn">
-            <div class="bg-white rounded-2xl shadow-md p-8 border border-slate-100 text-center max-w-2xl mx-auto mb-8">
-                <div class="inline-flex p-4 rounded-full bg-blue-50 text-blue-600 mb-4" id="summary-icon-box">
-                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <h2 class="text-2xl font-bold text-slate-900 mb-1" id="summary-part-title">สิ้นสุดการทดสอบพาร์ทนี้!</h2>
-                <p class="text-slate-400 text-xs mb-6">สรุปผลสัมฤทธิ์และผลการวิเคราะห์ระดับความรู้ความสามารถของคุณสำหรับโมดูลนี้</p>
-
-                <div class="grid grid-cols-2 gap-4 max-w-xs mx-auto mb-8 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
-                    <div class="text-center border-r border-slate-200">
-                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">คะแนนสอบ</div>
-                        <div class="text-3xl font-extrabold text-slate-800 mt-1"><span id="summary-score">0</span>/<span id="summary-total">0</span></div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">ระดับความรอบรู้</div>
-                        <div id="summary-grade" class="text-base font-extrabold mt-3 text-emerald-600">Excellent</div>
-                    </div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row justify-center gap-3">
-                    <button onclick="toggleReviewDetails()" class="border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-5 py-3 rounded-xl transition text-sm flex items-center justify-center">
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                        ดูประวัติทบทวนรายข้อ
-                    </button>
-                    <button onclick="restartCurrentPart()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-3 rounded-xl shadow-sm transition text-sm flex items-center justify-center">
-                        ทำข้อสอบซ้ำอีกครั้ง
-                    </button>
-                    <button onclick="exitToDashboard()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-5 py-3 rounded-xl shadow-sm transition text-sm flex items-center justify-center">
-                        กลับหน้าหลัก
-                    </button>
-                </div>
-            </div>
-
-            <div id="review-details-section" class="hidden max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6 animate-fadeIn">
-                <h3 class="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">บันทึกวิเคราะห์ผลสัมฤทธิ์รายข้อ (Itemized Evaluation)</h3>
-                <div class="space-y-6" id="review-list-container"></div>
-            </div>
-        </section>
-
-    </main>
-
-    <footer class="bg-slate-100 border-t border-slate-200 py-6 text-center text-xs text-slate-400">
-        &copy; 2026 MD Exam Simulator Engine. Synchronized with High-Yield USMLE Blueprints.
-    </footer>
-
-    <script>
-        let currentPartId = null;
-        let currentQuestionIndex = 0;
-        let partScore = 0;
-        let sessionReviewLogs = [];
-
-        window.addEventListener('load', () => {
-            const syncInterval = setInterval(() => {
-                if (window.examDatabase && Object.keys(window.examDatabase).length > 0) {
-                    clearInterval(syncInterval);
-                    initializeDashboard();
-                    recalculateGlobalScore();
-                }
-            }, 100);
-        });
-
-        function initializeDashboard() {
-            const grid = document.getElementById("parts-grid");
-            grid.innerHTML = "";
-
-            Object.keys(window.examDatabase).forEach(key => {
-                const part = window.examDatabase[key];
-                const isDone = localStorage.getItem(`status_${key}`) === "completed";
-                const savedScore = localStorage.getItem(`score_${key}`) || 0;
-
-                const card = document.createElement("div");
-                card.className = "bg-white rounded-2xl p-6 shadow-sm hover:shadow-md border border-slate-200/60 transition flex flex-col justify-between text-left";
-                card.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-md ${isDone ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
-                                ${isDone ? '✓ ทำเสร็จแล้ว' : '• รอดำเนินการ'}
-                            </span>
-                            <span class="text-xs font-bold text-slate-400">${part.questions.length} Questions</span>
-                        </div>
-                        <h3 class="text-base font-bold text-slate-800 mb-2">${part.title}</h3>
-                        <p class="text-xs text-slate-500 mb-6 leading-relaxed">${part.description}</p>
-                    </div>
-                    <div class="flex items-center justify-between pt-4 border-t border-slate-100 mt-auto">
-                        <span class="text-xs font-bold text-slate-500">
-                            ${isDone ? `คะแนนสูงสุด: <span class="text-blue-600">${savedScore}/${part.questions.length}</span>` : ''}
-                        </span>
-                        <button onclick="launchExamArena('${key}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition">
-                            ${isDone ? 'ทดสอบซ้ำ' : 'เริ่มทำข้อสอบ'}
-                        </button>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function recalculateGlobalScore() {
-            let total = 0;
-            if(!window.examDatabase) return;
-            Object.keys(window.examDatabase).forEach(key => {
-                total += parseInt(localStorage.getItem(`score_${key}`) || 0);
-            });
-            document.getElementById("global-score-tally").innerText = total;
-        }
-
-        function launchExamArena(partId) {
-            currentPartId = partId;
-            currentQuestionIndex = 0;
-            partScore = 0;
-            sessionReviewLogs = [];
-
-            document.getElementById("dashboard-view").classList.add("hidden");
-            document.getElementById("summary-view").classList.add("hidden");
-            document.getElementById("quiz-view").classList.remove("hidden");
-
-            presentQuestion();
-        }
-
-        function presentQuestion() {
-            const part = window.examDatabase[currentPartId];
-            const q = part.questions[currentQuestionIndex];
-
-            document.getElementById("explanation-panel").classList.add("hidden");
-            document.getElementById("current-score").innerText = `${partScore} ข้อ`;
+        <div id="summaryView" class="card summary-card hidden">
+            <h2>สรุปผลคะแนน (Lecture Summary)</h2>
+            <h3 id="summaryLecTitle">Lec Title</h3>
+            <p style="font-size: 1.2rem;">คุณทำได้ <strong id="summaryScore">0</strong> จาก <strong id="summaryTotal">20</strong> ข้อ</p>
+            <p style="font-size: 1.5rem;">คิดเป็น <strong id="summaryPercent">0</strong>%</p>
+            <div class="grade-text" id="summaryGrade">เกรด</div>
             
-            const progressPct = (currentQuestionIndex / part.questions.length) * 100;
-            document.getElementById("progress-bar-fill").style.width = `${progressPct}%`;
-            document.getElementById("progress-text").innerText = `ข้อที่ ${currentQuestionIndex + 1}/${part.questions.length}`;
-            document.getElementById("question-text").innerText = q.text;
+            <div class="summary-actions">
+                <button class="btn" style="background: #475569;" onclick="showReview()">🔍 ดูรายละเอียดทุกข้อ (Review)</button>
+                <button class="btn" style="background: #0284c7;" onclick="retryLecture()">🔄 ทำใหม่อีกครั้ง (Retry)</button>
+                <button class="btn" onclick="backToMenu()">🏠 กลับหน้าเมนู (Main Menu)</button>
+            </div>
+        </div>
 
-            const container = document.getElementById("options-container");
-            container.innerHTML = "";
+        <div id="reviewView" class="card hidden">
+            <h2>ตรวจสอบรายละเอียดข้อสอบ (Review)</h2>
+            <div id="reviewContent"></div>
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="btn" onclick="backToMenu()">🏠 กลับหน้าเมนู (Main Menu)</button>
+            </div>
+        </div>
+    </div>
 
-            Object.keys(q.options).forEach(key => {
-                const choiceBlock = document.createElement("button");
-                choiceBlock.id = `opt-${key}`;
-                choiceBlock.onclick = () => evaluateChoice(key);
-                choiceBlock.className = "w-full text-left p-4 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-400 transition flex items-start space-x-3 group";
-                choiceBlock.innerHTML = `
-                    <span class="flex-shrink-0 w-6 h-6 rounded-md bg-slate-100 group-hover:bg-blue-100 text-slate-600 group-hover:text-blue-700 flex items-center justify-center font-bold text-xs transition">${key}</span>
-                    <span class="text-slate-700 text-sm font-semibold pt-0.5">${q.options[key]}</span>
-                `;
-                container.appendChild(choiceBlock);
-            });
+<script>
+const db = {
+  "Lec 7: Congenital Abnormalities & Morphogenesis": [
+    {
+      q: "A 34-week pregnant woman with a history of chronic smoking and alcohol consumption presents with severe oligohydramnios. Ultrasound reveals bilateral empty renal fossae. Which of the following defines the primary mechanism behind the absence of the fetal kidneys?",
+      options: [
+        "A. Failure of the metanephric blastema to undergo physiological apoptosis",
+        "B. Arrested development of the formed renal primordium",
+        "C. Failure of inductive signaling from the ureteric bud to the metanephric blastema",
+        "D. Secondary destruction of normally developed kidneys via vascular occlusion",
+        "E. Abnormal cellular organization of the renal extracellular matrix"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด Apoptosis ไม่ใช่กลไกในการสร้างไต แต่ใช้ในการเจาะช่องว่าง (recanalization) หรือแยกนิ้วมือ",
+        "B: ผิด การหยุดชะงักของการพัฒนาเมื่อมีเนื้อเยื่อต้นกำเนิดแล้วเรียกว่า Hypoplasia หรือ Aplasia",
+        "C: ถูกต้อง การไม่มีไตแต่กำเนิด (Renal agenesis) เกิดจากความล้มเหลวของการส่งสัญญาณเหนี่ยวนำ (Failure of induction) ระหว่าง ureteric bud และ metanephric blastema ทำให้ไม่เกิดการสร้างอวัยวะตั้งแต่แรก [cite: 83, 1089, 1317, 1321]",
+        "D: ผิด การถูกทำลายของอวัยวะที่สร้างเสร็จแล้วคือ Disruption ไม่ใช่ Agenesis",
+        "E: ผิด การจัดเรียงเซลล์ผิดปกติคือ Dysplasia เช่น Multicystic dysplastic kidney"
+      ]
+    },
+    {
+      q: "A newborn is noted to have severe limb reduction defects characterized by extremely short limbs attached directly to the trunk (phocomelia). The mother took thalidomide during early pregnancy. Exposure during which of the following gestational windows primarily leads to this specific structural malformation?",
+      options: [
+        "A. Weeks 0-2 (Pre-embryonic period)",
+        "B. Weeks 3-8 (Embryonic period)",
+        "C. Weeks 9-15 (Early fetal period)",
+        "D. Weeks 16-24 (Mid fetal period)",
+        "E. Weeks 25-38 (Late fetal period)"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด สัปดาห์ 0-2 เป็นระยะ All-or-none มักเกิดการแท้งหรือรอดโดยไม่พิการ",
+        "B: ถูกต้อง สัปดาห์ที่ 3-8 เป็น Critical window of vulnerability (Organogenesis) การได้รับ Thalidomide ในช่วงนี้ (โดยเฉพาะสัปดาห์ 4-5) จะยับยั้ง Angiogenesis ทำให้รยางค์ไม่เจริญ (Phocomelia) [cite: 83, 1150, 1156, 1366, 1383]",
+        "C: ผิด ระยะนี้โครงสร้างหลักสร้างเสร็จแล้ว การได้รับสารพิษมักส่งผลต่อการทำงาน (Functional defect) หรือสมอง",
+        "D: ผิด เป็นช่วงการเจริญเติบโต (Growth and maturation) ไม่ทำให้เกิด major structural defects รุนแรงแบบ Phocomelia",
+        "E: ผิด สารก่อวิรูปในช่วงท้ายมักทำให้เกิด growth restriction มากกว่าโครงสร้างผิดรูป"
+      ]
+    },
+    {
+      q: "Which of the following transcription factors is a master regulator responsible for positional identity along the anteroposterior axis of the developing embryo?",
+      options: [
+        "A. Sonic Hedgehog (SHH)",
+        "B. PAX6",
+        "C. PAX3",
+        "D. HOX genes",
+        "E. Fibroblast Growth Factor (FGF)"
+      ],
+      correct: 3,
+      exp: [
+        "A: ผิด SHH ควบคุมการแบ่งซีกซ้าย/ขวา (Brain & limb patterning) ไม่ใช่แกนหัวจรดหาง",
+        "B: ผิด PAX6 เกี่ยวข้องกับการพัฒนาของดวงตาโดยตรง",
+        "C: ผิด PAX3 เกี่ยวข้องกับการพัฒนาหลอดประสาทไขสันหลังและ neural crest",
+        "D: ถูกต้อง HOX genes (Homeobox) กำหนดลักษณะจำเพาะประจำปล้อง (Positional identity) ตามแนวแกน Anteroposterior axis หากกลายพันธุ์ แขนขาอาจงอกผิดตำแหน่ง [cite: 83, 1092, 1292]",
+        "E: ผิด FGF กระตุ้นการเพิ่มจำนวนและยืดออกของเนื้อเยื่อ แต่ไม่ใช่ master regulator สำหรับ positional identity ในบริบทนี้"
+      ]
+    },
+    {
+      q: "A neonate presents with severe cyanosis and respiratory distress. Chest radiography reveals a solid, non-canalized segment of the esophagus (Esophageal atresia). This anomaly is primarily due to a failure in which of the following cellular processes?",
+      options: [
+        "A. Epithelial-mesenchymal transition",
+        "B. Cellular migration of neural crest cells",
+        "C. Physiological apoptosis",
+        "D. Proliferation of the splanchnic mesoderm",
+        "E. Abnormal cellular organization"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด เกี่ยวข้องกับการเปลี่ยนชนิดเซลล์ ไม่ใช่การเจาะช่องท่อ",
+        "B: ผิด การอพยพเซลล์มีบทบาทสำคัญในหัวใจและกะโหลกศีรษะ ไม่ใช่ปัจจัยหลักที่ทำให้เกิด atresia ในหลอดอาหาร",
+        "C: ถูกต้อง Atresia เกิดจากความล้มเหลวของ Physiological Apoptosis ที่ควรจะเจาะช่องตรงกลางหลอดอาหารที่เคยตัน (Solid cord stage) ให้กลวง (Recanalization) [cite: 83, 1098, 1344, 1350]",
+        "D: ผิด การแบ่งเซลล์ที่มากไปในตอนแรกทำให้ตัน แต่การที่ไม่กลวงเกิดจากการขาด apoptosis",
+        "E: ผิด การจัดเรียงตัวเซลล์ผิดปกติคือกลไกของ Dysplasia"
+      ]
+    },
+    {
+      q: "During a fetal autopsy, an infant is found to have absent thymic tissue but a microscopic remnant of the primordium is identified in the neck region. This specific error of morphogenesis is best classified as:",
+      options: [
+        "A. Agenesis",
+        "B. Aplasia",
+        "C. Hypoplasia",
+        "D. Dysplasia",
+        "E. Disruption"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด Agenesis คือการไม่มีแม้แต่เนื้อเยื่อต้นกำเนิด (No primordium)",
+        "B: ถูกต้อง Aplasia คือความล้มเหลวในการพัฒนาเป็นอวัยวะที่สมบูรณ์ โดยที่อวัยวะหลักหายไปแต่ยังคงมีร่องรอยของเนื้อเยื่อต้นกำเนิดหลงเหลืออยู่ (Primordium is present but fails to develop) [cite: 83, 1096, 1330]",
+        "C: ผิด Hypoplasia คือมีอวัยวะครบแต่เจริญไม่เต็มที่ ขนาดเล็กกว่าปกติ",
+        "D: ผิด Dysplasia คือการจัดเรียงตัวของเซลล์ผิดปกติ",
+        "E: ผิด Disruption คืออวัยวะถูกสร้างสมบูรณ์แล้วถูกทำลายในภายหลัง"
+      ]
+    },
+    {
+      q: "A pregnant woman is exposed to high doses of ionizing radiation (>200 mSv) at 10 weeks of gestation. Which of the following fetal outcomes is most directly correlated with this specific timing and exposure?",
+      options: [
+        "A. Phocomelia",
+        "B. Bilateral renal agenesis",
+        "C. Severe microcephaly and mental retardation",
+        "D. Cleft lip and palate",
+        "E. Non-immune hydrops fetalis"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด Phocomelia เกิดจาก Thalidomide ช่วง 4-5 สัปดาห์",
+        "B: ผิด ไม่ใช่พยาธิสภาพคลาสสิกของรังสี",
+        "C: ถูกต้อง รังสีชนิดก่อไอออนทำให้เกิด DNA damage และ Apoptosis ทารกไวต่อรังสีที่สุดในช่วงสร้างโครงข่ายประสาท (สัปดาห์ที่ 8-15) การได้รับปริมาณสูงจะทำลาย neural progenitors อย่างกว้างขวาง นำไปสู่ severe microcephaly และ mental retardation [cite: 83, 1173, 1176]",
+        "D: ผิด Cleft lip มักเกิดก่อนสัปดาห์ที่ 8 และไม่ได้เจาะจงกับรังสีขนาดนี้เท่ากับสมอง",
+        "E: ผิด มักเกิดจากการติดเชื้อ Parvovirus B19 ที่ทำลายเม็ดเลือดแดงทารก"
+      ]
+    },
+    {
+      q: "Which TORCH infection is specifically known to target germinal matrix neural progenitor cells, leading to periventricular calcifications and microcephaly?",
+      options: [
+        "A. Toxoplasma gondii",
+        "B. Rubella virus",
+        "C. Cytomegalovirus (CMV)",
+        "D. Treponema pallidum",
+        "E. Parvovirus B19"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด Toxoplasmosis ทำให้เกิด Diffuse intracranial calcifications ไม่ใช่จำเพาะที่ periventricular",
+        "B: ผิด Rubella ทำให้เกิดต้อกระจก หูหนวก และ PDA (หัวใจรั่ว)",
+        "C: ถูกต้อง CMV มี tropism จำเพาะต่อ germinal matrix neural progenitor cells ทำให้เกิดหินปูนเกาะรอบโพรงสมอง (Periventricular calcifications) [cite: 83, 1161, 1162]",
+        "D: ผิด ซิฟิลิสทำให้เกิดการอักเสบกระดูกและตับม้ามโต Hutchinson teeth ในเด็กโต",
+        "E: ผิด Parvovirus B19 โจมตีเซลล์ต้นกำเนิดเม็ดเลือดแดง ทำให้ทารกซีดรุนแรง"
+      ]
+    },
+    {
+      q: "A newborn is diagnosed with Potter sequence. What is the most immediate cause of death typically associated with this cascade of anomalies?",
+      options: [
+        "A. Chronic kidney failure",
+        "B. Pulmonary hypoplasia leading to respiratory failure",
+        "C. Severe limb contractures",
+        "D. Heart failure from structural cardiac defects",
+        "E. Overwhelming neonatal sepsis"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด ทารกมักเสียชีวิตก่อนที่ปัญหาไตวายจะแสดงผลรุนแรงหลังคลอดทันที",
+        "B: ถูกต้อง Potter sequence ทำให้ทารกไม่มีน้ำคร่ำ ปอดจึงไม่ได้รับ hydrostatic stretch ทำให้ถุงลมไม่พัฒนา (Pulmonary hypoplasia) ทารกจึงเสียชีวิตจากภาวะขาดออกซิเจนรุนแรงหลังคลอดทันที [cite: 83, 1090, 1091, 1245]",
+        "C: ผิด เท้าปุกและข้อติด (Clubfeet) ไม่ได้ทำให้เสียชีวิต",
+        "D: ผิด โรคหัวใจไม่ได้เป็นส่วนหนึ่งของ Potter sequence คลาสสิก",
+        "E: ผิด ไม่มีความเกี่ยวข้องโดยตรงกับการติดเชื้อในกรณีนี้"
+      ]
+    },
+    {
+      q: "A mother with poorly controlled pregestational diabetes gives birth to a 4.8 kg macrosomic infant. The infant's excessive size and organomegaly are primarily driven by which of the following fetal mechanisms?",
+      options: [
+        "A. Maternal insulin crossing the placenta",
+        "B. Fetal hyperinsulinemia acting as a growth hormone",
+        "C. Transplacental transfer of maternal growth hormone",
+        "D. Overexpression of the SHH gene due to hyperglycemia",
+        "E. Excessive amniotic fluid volume directly expanding fetal tissues"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด อินซูลินของแม่ไม่สามารถผ่านรกได้",
+        "B: ถูกต้อง ระดับน้ำตาลที่สูงจากแม่ผ่านรกไปกระตุ้นตับอ่อนทารก ทำให้ทารกสร้างอินซูลินมหาศาล (Fetal hyperinsulinemia) ซึ่งทำหน้าที่คล้าย Growth hormone ส่งผลให้เกิด Macrosomia และ Organomegaly [cite: 83, 1176, 1177]",
+        "C: ผิด Growth hormone จากแม่ไม่ข้ามรกและไม่ได้เป็นกลไกหลัก",
+        "D: ผิด SHH เกี่ยวข้องกับการแบ่งซีกสมอง ไม่ใช่ macrosomia",
+        "E: ผิด น้ำคร่ำมาก (Polyhydramnios) เป็นผลพวง ไม่ใช่สาเหตุที่ทำให้ตัวทารกใหญ่ขึ้น"
+      ]
+    },
+    {
+      q: "Which of the following interventions has been definitively proven to dramatically reduce the incidence of multifactorial Neural Tube Defects (NTDs) if initiated prior to conception?",
+      options: [
+        "A. Vitamin A (Retinoic Acid) supplementation",
+        "B. Avoidance of oral isotretinoin",
+        "C. Folic acid supplementation (0.4 mg/day)",
+        "D. Glycemic control with insulin",
+        "E. Avoiding exposure to cats and undercooked meat"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด วิตามินเอขนาดสูงเป็นสารก่อวิรูป (Teratogen) ทำให้เกิดพิการ",
+        "B: ผิด การเลี่ยงยาแก้สิวลดความพิการทางสมองและหน้า แต่ไม่ใช่ intervention ที่ลด NTD ในระดับประชากร",
+        "C: ถูกต้อง การเสริมกรดโฟลิก 0.4 mg/day ตั้งแต่ก่อนตั้งครรภ์ช่วยป้องกันความล้มเหลวในการปิดของหลอดประสาท (Neural tube defects) ได้อย่างมีนัยสำคัญสูงสุด [cite: 83, 1177, 1178]",
+        "D: ผิด ควบคุมน้ำตาลลดความเสี่ยงเบาหวานและ NTD ได้บ้าง แต่ Folic acid คือมาตรการหลักระดับสากล",
+        "E: ผิด เป็นการป้องกัน Toxoplasmosis"
+      ]
+    },
+    {
+      q: "An infant presents with a smooth philtrum, thin upper lip, short palpebral fissures, and microcephaly. The mother admits to chronic substance abuse during pregnancy. The underlying pathogenesis involves toxicity from which substance inhibiting neuronal migration?",
+      options: [
+        "A. Acetaldehyde",
+        "B. Nicotine",
+        "C. Carbon Monoxide",
+        "D. Retinoic Acid",
+        "E. Valproic Acid"
+      ],
+      correct: 0,
+      exp: [
+        "A: ถูกต้อง ทารกมีลักษณะ Fetal Alcohol Spectrum Disorders (FASD) แอลกอฮอล์ถูกย่อยเป็น Acetaldehyde ซึ่งทำลายกระบวนการ cell migration (โปรตีน L1CAM) ทำให้เกิดความพิการทางสมองและใบหน้าจำเพาะ [cite: 83, 1172, 1173]",
+        "B: ผิด นิโคตินทำให้เส้นเลือดหดตัว ทารกตัวเล็ก (Growth restriction)",
+        "C: ผิด คาร์บอนมอนอกไซด์จับฮีโมโกลบินทำให้ทารกขาดออกซิเจน ไม่ทำให้หน้าผิดรูป",
+        "D: ผิด Retinoic acid ทำให้ปากแหว่งและโรคหัวใจ",
+        "E: ผิด ยากันชักมักทำให้เกิด Neural tube defects"
+      ]
+    },
+    {
+      q: "Amnion nodosum, seen during placental examination, is a definitive pathological footprint of which of the following prenatal conditions?",
+      options: [
+        "A. Acute placental abruption",
+        "B. Severe and prolonged oligohydramnios",
+        "C. Congenital syphilis infection",
+        "D. Maternal diabetes mellitus",
+        "E. Cytomegalovirus infection"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด รกลอกตัวก่อนกำหนดพบก้อนเลือดคั่ง (hematoma)",
+        "B: ถูกต้อง Amnion nodosum คือก้อนเศษเซลล์ผิวหนังทารกที่ถูกบีบอัดติดกับเยื่อหุ้มรก เป็นลักษณะคลาสสิกที่ยืนยันว่าทารกอยู่ในภาวะน้ำคร่ำน้อยรุนแรง (Severe prolonged oligohydramnios) มาเป็นเวลานาน [cite: 83, 1185, 1189]",
+        "C: ผิด ซิฟิลิสทำให้รกบวมใหญ่ (Placentomegaly)",
+        "D: ผิด เบาหวานมักพบรกใหญ่หรือหลอดเลือดรกตีบ",
+        "E: ผิด CMV มักพบรอยอักเสบในรก ไม่ใช่ amnion nodosum"
+      ]
+    },
+    {
+      q: "The presence of a Single Umbilical Artery (SUA) rather than the normal two is a clinical red flag highly associated with which of the following?",
+      options: [
+        "A. Achondroplasia",
+        "B. Trisomy 21",
+        "C. VACTERL association and cardiac defects",
+        "D. Fetal alcohol syndrome",
+        "E. Amniotic band sequence"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด คนแคระเกิดจากการกลายพันธุ์ ไม่เกี่ยวกับสายสะดือ",
+        "B: ผิด Trisomy 21 สัมพันธ์กับ AVSD แต่น้อยกว่ากับ SUA โดยตรง",
+        "C: ถูกต้อง เส้นเลือดแดงสะดือมีเส้นเดียว (SUA) บ่งบอกถึง vascular maldevelopment ซึ่งมีความเสี่ยงสูงที่จะพบโรคร่วมในกลุ่ม VACTERL association และความพิการแต่กำเนิดของหัวใจและไต [cite: 83, 1184, 1189]",
+        "D: ผิด FASD ไม่สัมพันธ์ชัดเจนกับจำนวนเส้นเลือดสะดือ",
+        "E: ผิด Amniotic band เป็นอุบัติเหตุทางกลไก"
+      ]
+    },
+    {
+      q: "A developmental field defect refers to multiple anomalies resulting from the disturbance of a single localized region of embryonic tissue. Which of the following is a classic clinical example?",
+      options: [
+        "A. Amniotic band amputation",
+        "B. Holoprosencephaly with midline cleft lip",
+        "C. Potter sequence",
+        "D. Down syndrome",
+        "E. VATER association"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด เป็น Disruption จากภายนอก",
+        "B: ถูกต้อง Holoprosencephaly เป็นการรบกวน midline embryonic field ทำให้สมองส่วนหน้าไม่แยกซีก และส่งผลกระทบต่อเนื่องให้ใบหน้าตรงกลาง (Midline facial structures) พิการร่วมกันอย่างเป็นระบบ [cite: 83, 1126, 1129, 2338]",
+        "C: ผิด เป็น Sequence (ปฏิกิริยาลูกโซ่ทางกลศาสตร์)",
+        "D: ผิด เป็น Syndrome (ความผิดปกติระดับโครโมโซมที่กระจายทั่วร่างกาย)",
+        "E: ผิด เป็น Association (เกิดร่วมกันแต่หาสาเหตุรวมไม่ได้)"
+      ]
+    },
+    {
+      q: "A mother took a known teratogen during week 6 of pregnancy. The fetus is diagnosed with an isolated structural defect. This primary intrinsic error of morphogenesis is classified as:",
+      options: [
+        "A. Disruption",
+        "B. Deformation",
+        "C. Malformation",
+        "D. Dysplasia",
+        "E. Association"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด Disruption คือทำลายสิ่งที่สร้างปกติแล้ว",
+        "B: ผิด Deformation เกิดจากแรงกดทับทางกายภาพ",
+        "C: ถูกต้อง Malformation เป็นความบกพร่องปฐมภูมิตั้งแต่ระดับการสร้างเนื้อเยื่อ (Intrinsic error) ซึ่งเกิดขึ้นระหว่างสัปดาห์ 3-8 (Organogenesis) จากพันธุกรรมหรือสารก่อวิรูป (Teratogens) [cite: 83, 1103, 1378, 1382]",
+        "D: ผิด Dysplasia เป็นการจัดเรียงเซลล์ผิดปกติที่ส่งผลแย่ลงต่อเนื่องตลอดชีวิต",
+        "E: ผิด Association คือกลุ่มโรคที่เกิดร่วมกันแบบสุ่ม"
+      ]
+    },
+    {
+      q: "A baby is born with severe joint contractures (arthrogryposis) and a collapsed skull vault. The mother was bitten by mosquitoes during a trip to South America. The pathogenesis involves a virus specifically triggering rapid apoptosis in:",
+      options: [
+        "A. Splanchnic mesoderm",
+        "B. Erythroid progenitor cells",
+        "C. Neural progenitor cells",
+        "D. Chondrocytes",
+        "E. Fetal endothelial cells"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด สร้างกล้ามเนื้อเรียบและทางเดินอาหาร",
+        "B: ผิด เป็นเป้าหมายของ Parvovirus B19",
+        "C: ถูกต้อง Zika virus มีเป้าหมายจำเพาะทำลาย Neural progenitor cells ทำให้เซลล์ประสาทตาย กะโหลกยุบตัว (Microcephaly) และทารกไม่ขยับตัวจนข้อติด (Arthrogryposis) [cite: 83, 1166, 1167, 1170]",
+        "D: ผิด เซลล์กระดูกอ่อนผิดปกติพบใน Achondroplasia",
+        "E: ผิด เชื้ออื่นเช่น Rubella ทำลายหลอดเลือดได้ แต่กะโหลกยุบชัดเจนคือ Zika"
+      ]
+    },
+    {
+      q: "A balanced Robertsonian translocation carrier (e.g., fusion of chromosome 14 and 21) is phenotypically normal. What is the primary clinical significance for this carrier?",
+      options: [
+        "A. High risk of developing leukemia",
+        "B. Progressive cognitive decline in early adulthood",
+        "C. High risk of producing unbalanced gametes leading to recurrent miscarriages or offspring with Down syndrome",
+        "D. Development of severe skeletal dysplasia",
+        "E. Inability to conceive naturally due to gonadal dysgenesis"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด ผู้ป่วย Down syndrome (Trisomy 21) เสี่ยงต่อ Leukemia ไม่ใช่พาหะที่สมดุล",
+        "B: ผิด สมองผู้เป็นพาหะปกติดี",
+        "C: ถูกต้อง พาหะ Robertsonian translocation เสียชิ้นส่วนที่ไม่มีนัยสำคัญไปจึงปกติ แต่การแบ่งเซลล์สืบพันธุ์ (Meiosis) จะผิดพลาด ทำให้มีความเสี่ยงสูงที่จะแท้งบุตรซ้ำซาก หรือให้กำเนิดบุตรที่มีโครโมโซมเกิน (Down syndrome) [cite: 83, 1143, 1144]",
+        "D: ผิด ไม่สัมพันธ์กับโรคกระดูก",
+        "E: ผิด สัมพันธ์กับ Turner syndrome หรือ Klinefelter มากกว่า"
+      ]
+    },
+    {
+      q: "Which teratogen disrupts neural crest cell migration, derails TGF-beta and HOX signaling, and leads to severe craniofacial and cardiac defects?",
+      options: [
+        "A. Thalidomide",
+        "B. Isotretinoin (Retinoic Acid)",
+        "C. Valproic Acid",
+        "D. Lithium",
+        "E. Ethanol"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด รบกวน angiogenesis ทำให้แขนขากุด",
+        "B: ถูกต้อง Isotretinoin (ยารักษาสิว) ขัดขวางการอพยพของ neural crest cells ทำให้โครงสร้างใบหน้า (Cleft palate), หัวใจ, และระบบประสาทผิดรูปอย่างรุนแรง [cite: 83, 1171, 1172]",
+        "C: ผิด ยากันชักรบกวนกระบวนการปิดของ neural tube",
+        "D: ผิด ลิเธียมสัมพันธ์กับ Ebstein anomaly ของหัวใจ",
+        "E: ผิด แอลกอฮอล์ยับยั้ง L1CAM เกิดปัญหา cell migration ทางสมอง"
+      ]
+    },
+    {
+      q: "During fetal autopsy, you identify an infant with a U-shaped cleft palate and extreme micrognathia. The cleft palate is deemed a secondary defect caused by the tongue being displaced upward due to the small jaw. This pattern is best described as a:",
+      options: [
+        "A. Syndrome",
+        "B. Disruption",
+        "C. Sequence",
+        "D. Association",
+        "E. Developmental field defect"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด Syndrome เกิดจากสาเหตุเดียวที่ไปทำลายหลายจุดขนานกันไป",
+        "B: ผิด ไม่ใช่การทำลายเชิงกายภาพจากนอกตัว",
+        "C: ถูกต้อง นี่คือ Pierre Robin Sequence ปฐมเหตุคือคางเล็ก (Micrognathia) ทำให้ลิ้นตกไปขวางการปิดของเพดานปาก (Secondary defect) เกิดการพิการเป็นโดมิโนหรือปฏิกิริยาลูกโซ่ [cite: 83, 1116, 1118, 1406, 1409]",
+        "D: ผิด Association ไม่สามารถอธิบายความเชื่อมโยงได้",
+        "E: ผิด ไม่ใช่การล้มเหลวของ morphogen ในบริเวณเดียวกันแบบ HPE"
+      ]
+    },
+    {
+      q: "Maternal exposure to Parvovirus B19 primarily causes fetal death through which of the following mechanisms?",
+      options: [
+        "A. Massive neural apoptosis causing microcephaly",
+        "B. Direct suppression of fetal renal development",
+        "C. Destruction of erythroid progenitor cells leading to severe anemia and heart failure",
+        "D. Inflammatory obstruction of the biliary tree",
+        "E. Vascular disruption causing intestinal atresia"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด เป็นลักษณะของ Zika หรือ รังสี",
+        "B: ผิด ไม่เกี่ยวกับไต",
+        "C: ถูกต้อง Parvovirus B19 โจมตีเซลล์เม็ดเลือดแดงตัวอ่อนในตับและไขกระดูก ทำให้เม็ดเลือดแดงแตก ทารกซีดรุนแรง หัวใจทำงานหนักจนวาย (High-output cardiac failure / Non-immune hydrops fetalis) [cite: 83, 1168, 1169]",
+        "D: ผิด ไม่เกี่ยวข้องกับท่อน้ำดีตีบ",
+        "E: ผิด มักเกิดจากอุบัติเหตุเส้นเลือดอุดตันเฉพาะที่"
+      ]
+    }
+  ],
+
+  "Lec 8: Clinical Approach to Dysmorphology": [
+    {
+      q: "A 2-month-old infant is found to have preauricular tags, a single transverse palmar crease, and a sacral dimple. According to dysmorphology principles, finding 3 or more minor anomalies carries approximately what percentage risk of a hidden major anomaly being present?",
+      options: [
+        "A. 3%",
+        "B. 10%",
+        "C. 25%",
+        "D. 50%",
+        "E. 90%"
+      ],
+      correct: 4,
+      exp: [
+        "A: ผิด 3% คือความเสี่ยงเมื่อพบ minor anomaly เพียง 1 อย่าง",
+        "B: ผิด 10% คือความเสี่ยงเมื่อพบ minor anomaly 2 อย่าง",
+        "C: ผิด ตัวเลขนี้ไม่ตรงตามกฎทางคลินิก",
+        "D: ผิด ไม่ใช่ความเสี่ยงที่ถูกต้อง",
+        "E: ถูกต้อง กฎทองทางคลินิกกล่าวว่าการพบความผิดปกติรอง (Minor anomalies) ตั้งแต่ 3 ประการขึ้นไป บ่งชี้ความเสี่ยงสูงถึง 90% ที่จะมีความผิดปกติหลักซ่อนอยู่ หรือเป็นส่วนหนึ่งของกลุ่มอาการทางพันธุกรรม [cite: 17, 83, 146, 280, 812]"
+      ]
+    },
+    {
+      q: "A newborn is diagnosed with an isolated cleft palate. This structural defect threatens significant function and requires surgical intervention. It is best classified as a:",
+      options: [
+        "A. Minor malformation",
+        "B. Major malformation",
+        "C. Major deformation",
+        "D. Minor disruption",
+        "E. Major dysplasia"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด ความผิดปกติที่ต้องพึ่งพาศัลยกรรมไม่ใช่ minor",
+        "B: ถูกต้อง Cleft palate เกิดจากการประกอบเนื้อเยื่อผิดพลาดตั้งแต่ไตรมาสแรก (Malformation) และเนื่องจากมีผลรบกวนการทำงานของร่างกายและต้องผ่าตัด จึงถือเป็น Major anomaly [cite: 83, 138, 140, 810, 811]",
+        "C: ผิด ไม่ได้เกิดจากแรงกดทับมดลูก",
+        "D: ผิด ไม่ใช่สิ่งที่สร้างเสร็จแล้วถูกทำลาย",
+        "E: ผิด ไม่ใช่การเรียงเซลล์ผิดปกติทั้งระบบ"
+      ]
+    },
+    {
+      q: "Talipes equinovarus (clubfoot) observed in an otherwise normal infant who experienced severe oligohydramnios late in the 3rd trimester is best classified pathophysiologically as a:",
+      options: [
+        "A. Malformation",
+        "B. Disruption",
+        "C. Deformation",
+        "D. Dysplasia",
+        "E. Sequence"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด ไม่ใช่ความบกพร่องจากระดับยีนที่เกิดตอน 3-8 สัปดาห์",
+        "B: ผิด เนื้อเยื่อไม่ได้ถูกฉีกขาดหรือขาดเลือด",
+        "C: ถูกต้อง Deformation เกิดจากแรงกดทับเชิงกล (Mechanical forces) ภายนอกในพื้นที่จำกัด เช่น น้ำคร่ำน้อย (Oligohydramnios) มักเกิดในช่วงท้ายการตั้งครรภ์ ทำให้โครงสร้างที่ปกติอยู่แล้วบิดเบี้ยวไป [cite: 83, 158, 166, 169, 814]",
+        "D: ผิด ไม่ใช่เซลล์กระดูกเรียงตัวผิดปกติ",
+        "E: ผิด Clubfoot เป็นผลลัพธ์ ไม่ใช่ทั้งกระบวนการ sequence"
+      ]
+    },
+    {
+      q: "Amniotic band syndrome, which causes limb reduction or digit amputation due to physical tearing of previously normally formed tissue, is an example of:",
+      options: [
+        "A. Malformation",
+        "B. Disruption",
+        "C. Deformation",
+        "D. Dysplasia",
+        "E. Association"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด อวัยวะถูกสร้างขึ้นมาปกติแล้ว จึงไม่ใช่ malformation",
+        "B: ถูกต้อง Disruption คือการพังทลายของเนื้อเยื่อที่เคยปกติ (Destructive process) จากปัจจัยภายนอก เช่น ถูกแถบพังผืดรัด (Amniotic band) จนขาดเลือด [cite: 83, 161, 181, 814, 2335]",
+        "C: ผิด ไม่ใช่แค่บิดเบี้ยวจากแรงกด",
+        "D: ผิด ไม่เกี่ยวกับการเจริญของเซลล์ทั้งระบบ",
+        "E: ผิด ไม่ใช่กลุ่มอาการหลายระบบที่เกิดพร้อมกัน"
+      ]
+    },
+    {
+      q: "Achondroplasia is characterized by abnormal intrinsic cellular growth and organization of chondrocytes that continues to worsen as the child grows. This is the classic hallmark of:",
+      options: [
+        "A. Malformation",
+        "B. Disruption",
+        "C. Deformation",
+        "D. Dysplasia",
+        "E. Syndrome"
+      ],
+      correct: 3,
+      exp: [
+        "A: ผิด ไม่ใช่แค่การประกอบอวัยวะผิดเฉพาะที่ แต่เป็นความผิดปกติระดับเซลล์",
+        "B: ผิด เนื้อเยื่อไม่ได้ถูกทำลายจากภายนอก",
+        "C: ผิด ไม่ใช่รอยบุบจากแรงกดทับ",
+        "D: ถูกต้อง Dysplasia คือความผิดปกติระดับโครงสร้างเซลล์หรือ 조직 (Abnormal cellular organization) มักมาจากความผิดปกติของยีน ทำให้เนื้อเยื่อนั้นๆ (เช่น กระดูกอ่อน) โตผิดปกติตลอดชีวิต [cite: 83, 163, 187, 815, 2318]",
+        "E: ผิด แม้จะมีหลายอาการ แต่นิยามทางพยาธิวิทยาของกลไกการสร้างเนื้อเยื่อนี้คือ Dysplasia"
+      ]
+    },
+    {
+      q: "A group of anomalies occurs together more frequently than by chance, but lacks a single unifying etiology or predictable genetic pattern. A prime example is VATER. This pattern is defined as a(n):",
+      options: [
+        "A. Syndrome",
+        "B. Sequence",
+        "C. Association",
+        "D. Developmental field defect",
+        "E. Chromosomal aberration"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด Syndrome ต้องมีสาเหตุร่วมกัน (Unifying cause) ที่ชัดเจน เช่น ยีน 1 ตัว",
+        "B: ผิด Sequence คือเหตุการณ์หนึ่งทำให้เกิดเหตุการณ์สองต่อกันเป็นทอดๆ",
+        "C: ถูกต้อง Association (เช่น VATER) คือกลุ่มความพิการที่เกิดร่วมกันบ่อยกว่าความบังเอิญทางสถิติ แต่ยังไม่สามารถหาสาเหตุเดียวหรือกลไกลูกโซ่มาอธิบายความเชื่อมโยงได้ทั้งหมด [cite: 83, 202, 2159]",
+        "D: ผิด เป็นความบกพร่องของเซลล์ที่พัฒนาในพื้นที่เดียวกัน",
+        "E: ผิด โครโมโซมผิดปกติมักจัดเป็น Syndrome"
+      ]
+    },
+    {
+      q: "In an infant with multiple congenital anomalies and global developmental delay of unknown etiology, which genetic test is universally recommended as the standard FIRST-TIER diagnostic tool?",
+      options: [
+        "A. High-resolution G-banded Karyotyping",
+        "B. Fluorescence In Situ Hybridization (FISH)",
+        "C. Cytogenetic Microarray (CMA)",
+        "D. Whole Exome Sequencing (WES)",
+        "E. Targeted single-gene PCR"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด Karyotype ความละเอียดต่ำเกินไป ไม่เห็น microdeletions",
+        "B: ผิด FISH ใช้เมื่อแพทย์สงสัยโรคที่เจาะจงบริเวณใดบริเวณหนึ่งแล้ว",
+        "C: ถูกต้อง CMA เป็นการตรวจลำดับแรก (First-tier) สำหรับเด็กที่มีพัฒนาการล่าช้าและความพิการหลายระบบ เพราะสามารถกวาดดูความผิดปกติระดับ Microdeletion/Duplication ได้ทั่วทั้งจีโนมด้วยความละเอียดสูง [cite: 83, 44, 75, 809, 895]",
+        "D: ผิด WES แพงและซับซ้อน มักใช้เป็น second-tier หาก CMA ปกติ",
+        "E: ผิด ใช้เมื่อสงสัยยีนเดียวอย่างชัดเจนแล้ว"
+      ]
+    },
+    {
+      q: "Down syndrome (Trisomy 21) causes a predictable pattern of features including flat facial profile, hypotonia, AVSD, and single palmar crease. Because these anomalies arise independently from a single, unified genetic cause, Down syndrome is pathogenetically a:",
+      options: [
+        "A. Deformation",
+        "B. Sequence",
+        "C. Syndrome",
+        "D. Association",
+        "E. Disruption"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด หน้าแบนใน Down ไม่ได้เกิดจากแรงกดทับเหมือน Potter",
+        "B: ผิด อาการของ Down ไม่ได้เป็นผลพวงแบบโดมิโนจากปัญหาเดียว",
+        "C: ถูกต้อง Syndrome คือกลุ่มความผิดปกติในหลายระบบที่เกิดขึ้นขนานกันไป แต่มี ปฐมเหตุ หรือ 'ร่มใหญ่' คันเดียวกัน (Unified etiology) เช่น โครโมโซมคู่ที่ 21 เกิน [cite: 83, 191, 195, 2158]",
+        "D: ผิด หาสาเหตุเจออย่างชัดเจนแล้ว ไม่ใช่แค่สถิติ",
+        "E: ผิด ไม่ได้เกิดการทำลายจากปัจจัยภายนอก"
+      ]
+    },
+    {
+      q: "An infant presents with micrognathia, glossoptosis (downwardly displaced tongue), and a U-shaped cleft palate. The micrognathia forced the tongue backward, which physically prevented the palate from fusing. This is an example of a:",
+      options: [
+        "A. Malformation sequence",
+        "B. Malformation syndrome",
+        "C. Deformation sequence",
+        "D. Disruption association",
+        "E. Dysplasia syndrome"
+      ],
+      correct: 0,
+      exp: [
+        "A: ถูกต้อง นี่คือ Pierre Robin sequence เริ่มจากปฐมเหตุ (คางเล็ก-Malformation) ไปขัดขวางกลไกการปิดของเพดานปาก (Cleft palate) เกิดเป็นปฏิกิริยาลูกโซ่ [cite: 83, 213, 215, 2158]",
+        "B: ผิด อาการไม่ได้เกิดขนานกัน แต่เป็นโดมิโน",
+        "C: ผิด คางเล็กมักไม่ได้เกิดจากแรงกดทับในมดลูกเสมอไป",
+        "D: ผิด ไม่ใช่การฉีกขาดของเนื้อเยื่อ",
+        "E: ผิด ไม่เกี่ยวกับการเรียงเซลล์ผิดปกติ"
+      ]
+    },
+    {
+      q: "A pedigree analysis shows a dysmorphic child born to healthy parents who are first cousins. The child has an affected sister, but previous generations are healthy. This strongly suggests which pattern of inheritance?",
+      options: [
+        "A. Autosomal Dominant",
+        "B. Autosomal Recessive",
+        "C. X-linked Recessive",
+        "D. Mitochondrial Inheritance",
+        "E. Sporadic de novo mutation"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด พ่อแม่จะแสดงอาการด้วย",
+        "B: ถูกต้อง การแต่งงานในเครือญาติ (Consanguinity) และพ่อแม่ปกติแต่ลูกเป็นโรค (ข้ามรุ่น) เป็นลักษณะเด่นของ Autosomal Recessive [cite: 83, 98, 101, 317, 320]",
+        "C: ผิด มักพบในเพศชาย แต่ในกรณีนี้มีพี่สาวเป็นโรคด้วย",
+        "D: ผิด ถ่ายทอดจากแม่สู่ลูกทุกคน ไม่จำกัดเครือญาติ",
+        "E: ผิด ลูกเป็น 2 คนและแต่งงานในเครือญาติ ตัดเรื่องบังเอิญทิ้งไป"
+      ]
+    },
+    {
+      q: "Which of the following describes the fundamental limitation of traditional High-resolution G-banded Karyotyping?",
+      options: [
+        "A. It cannot identify the sex of the fetus",
+        "B. It cannot detect gross chromosomal aneuploidies",
+        "C. It cannot detect submicroscopic deletions smaller than 5 Megabases",
+        "D. It requires fetal brain tissue",
+        "E. It is unable to detect balanced translocations"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด Karyotype ดูเพศได้แม่นยำ (XX, XY)",
+        "B: ผิด Karyotype เก่งเรื่องดู Aneuploidy เช่น Trisomy 21",
+        "C: ถูกต้อง ข้อจำกัดของ Karyotype คือความละเอียดต่ำ (Resolution 5-10 Mb) ทำให้มองไม่เห็นความผิดปกติระดับย่อย (Microdeletions/Duplications) จึงต้องพึ่งพา CMA [cite: 83, 49, 74, 1146]",
+        "D: ผิด ใช้เซลล์จากเลือด น้ำคร่ำ หรือรกได้",
+        "E: ผิด Karyotype สามารถเห็น Balanced translocations ที่ใหญ่พอได้ (ซึ่ง CMA มักจะมองไม่เห็นหากไม่มี DNA หายไป)"
+      ]
+    },
+    {
+      q: "A dysmorphic infant requires targeted testing for a highly specific, known microdeletion (e.g., 22q11.2 for DiGeorge syndrome). Which genetic modality is most cost-effective and appropriate?",
+      options: [
+        "A. Whole Genome Sequencing (WGS)",
+        "B. G-banded Karyotyping",
+        "C. Fluorescence In Situ Hybridization (FISH)",
+        "D. Cell-Free DNA (NIPT)",
+        "E. Standard Biochemical Screening"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด WGS แพงและเกินความจำเป็นเมื่อเราสงสัยตำแหน่งเจาะจงแล้ว",
+        "B: ผิด Karyotype มองไม่เห็นระดับ Microdeletion",
+        "C: ถูกต้อง FISH เป็นการส่งโพรบเรืองแสงไปจับเป้าหมายที่เฉพาะเจาะจง หากทราบอยู่แล้วว่าหาสิ่งใด (Targeted known locus) FISH จะคุ้มค่าและแม่นยำที่สุด [cite: 83, 43, 74, 809, 894]",
+        "D: ผิด NIPT ใช้คัดกรองในแม่ตั้งครรภ์ ไม่ใช่วินิจฉัย",
+        "E: ผิด หาการกลายพันธุ์ระดับ DNA ไม่ได้"
+      ]
+    },
+    {
+      q: "An infant has ambiguous genitalia, a sign of severe dysmorphology. What is the immediate, mandatory next step according to clinical guidelines?",
+      options: [
+        "A. Wait until puberty to reassess",
+        "B. Immediate genetic and endocrine evaluation",
+        "C. Cosmetic surgical reconstruction on day 1",
+        "D. Reassure the parents it is a minor anomaly",
+        "E. Discharge and follow up in 6 months"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด เป็นภาวะฉุกเฉินทางคลินิก",
+        "B: ถูกต้อง ทารกแรกเกิดที่มีอวัยวะเพศกำกวม (Ambiguous genitalia) ถือเป็น Red Flag ที่ต้องได้รับการส่งตรวจทางพันธุศาสตร์และฮอร์โมนโดยด่วน เพื่อหลีกเลี่ยงวิกฤตทางฮอร์โมน (เช่น CAH) และกำหนดเพศสภาพ [cite: 83, 73, 262, 280]",
+        "C: ผิด ต้องได้การวินิจฉัยสาเหตุที่แน่ชัดก่อนศัลยกรรม",
+        "D: ผิด เป็น Major anomaly ร้ายแรง",
+        "E: ผิด อาจเกิดอันตรายถึงชีวิตจากเกลือแร่ผิดปกติ"
+      ]
+    },
+    {
+      q: "A family with a child suffering from a highly heterogeneous and complex multisystem disorder receives a negative CMA result. Which is the next logical step to identify a novel monogenic cause?",
+      options: [
+        "A. Repeat Karyotyping",
+        "B. Whole Exome Sequencing (WES)",
+        "C. FISH",
+        "D. Amniocentesis",
+        "E. MRI of the brain"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด Karyotype ความละเอียดต่ำกว่า CMA",
+        "B: ถูกต้อง หาก CMA ให้ผลลบในกลุ่มโรคที่มี Phenotype ซับซ้อน (Heterogeneous) การถอดรหัสพันธุกรรมส่วนที่สร้างโปรตีนทั้งหมด (WES) หรือ WGS คือก้าวถัดไป เพื่อหาการกลายพันธุ์ระดับนิวคลีโอไทด์ (Novel monogenic disorders) [cite: 83, 47, 49, 76]",
+        "C: ผิด FISH ต้องรู้ตำแหน่งที่จะหาก่อน",
+        "D: ผิด ทำไปเพื่อเจาะน้ำคร่ำ แต่เด็กคลอดแล้ว",
+        "E: ผิด เป็นการตรวจภาพ ไม่ใช่หาความผิดปกติของยีน"
+      ]
+    },
+    {
+      q: "Why is taking thorough maternal history essential when encountering an infant with microcephaly, cataracts, and a heart defect?",
+      options: [
+        "A. To document potential teratogenic TORCH infections or drug exposures",
+        "B. To identify the father's blood type",
+        "C. To assess for maternal pelvic dimensions",
+        "D. To determine the infant's adult height",
+        "E. To evaluate for post-natal malnutrition"
+      ],
+      correct: 0,
+      exp: [
+        "A: ถูกต้อง อาการนี้เข้าข่าย Rubella triad การซักประวัติมารดาจะช่วยแยกแยะระหว่างความผิดปกติทางพันธุกรรมกับปัจจัยสิ่งแวดล้อม (Teratogens / TORCH) ที่ผ่านรกเข้าไปทำร้ายตัวอ่อน [cite: 83, 23, 302, 1156]",
+        "B: ผิด กรุ๊ปเลือดพ่อไม่เกี่ยวกับความพิการเหล่านี้",
+        "C: ผิด ความกว้างเชิงกรานเกี่ยวกับการคลอด ไม่เกี่ยวกับเด็กพิการ",
+        "D: ผิด ไม่ได้เกี่ยวกับส่วนสูงวัยผู้ใหญ่",
+        "E: ผิด เป็นปัญหาตั้งแต่อยู่ในครรภ์"
+      ]
+    },
+    {
+      q: "In dysmorphology, measuring the interpupillary distance and comparing it to age-specific reference charts to identify hypertelorism is an example of:",
+      options: [
+        "A. Descriptive gestalt recognition",
+        "B. Subjective observation",
+        "C. Quantitative phenotypic assessment (Anthropometrics)",
+        "D. Radiographic evaluation",
+        "E. Pre-natal screening"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด Gestalt คือการมองภาพรวมแล้วนึกออก",
+        "B: ผิด การวัดมีตัวเลขไม่ใช่ความรู้สึก",
+        "C: ถูกต้อง การใช้เครื่องมือวัดเทียบกับกราฟมาตรฐานเป็นวิทยาศาสตร์ที่จับต้องได้ เรียกว่า Anthropometrics (การวัดสัดส่วนร่างกาย) ซึ่งลดอคติในการประเมินความผิดปกติ [cite: 83, 25, 27, 337, 342]",
+        "D: ผิด ไม่ได้ใช้ X-ray",
+        "E: ผิด เด็กเกิดแล้ว"
+      ]
+    },
+    {
+      q: "Which ethical boundary must be maintained during genetic counseling for a family with a newly diagnosed genetic syndrome?",
+      options: [
+        "A. Withhold information about recurrence risk to reduce maternal guilt",
+        "B. Mandate that the parents do not have more children",
+        "C. Make reproductive decisions on behalf of the parents",
+        "D. Provide non-directive counseling to facilitate informed decision-making",
+        "E. Ensure the extended family is tested without the parents' consent"
+      ],
+      correct: 3,
+      exp: [
+        "A: ผิด หน้าที่หลักคือต้องบอกโอกาสเกิดซ้ำ",
+        "B: ผิด ละเมิดสิทธิอนามัยเจริญพันธุ์",
+        "C: ผิด แพทย์ห้ามตัดสินใจแทนผู้ป่วย",
+        "D: ถูกต้อง ต้องให้ข้อมูลที่เป็นกลาง (Non-directive counseling) สนับสนุนจิตใจ และให้ครอบครัวตัดสินใจด้วยตัวเองอย่างมีข้อมูลครบถ้วน (Informed decision) [cite: 83, 53, 54, 845, 903]",
+        "E: ผิด ละเมิดความลับผู้ป่วย"
+      ]
+    },
+    {
+      q: "When an amniotic band wraps around a developing limb causing an autoamputation, the recurrence risk for the parents' next pregnancy is:",
+      options: [
+        "A. 25% (Autosomal Recessive)",
+        "B. 50% (Autosomal Dominant)",
+        "C. 10% (Multifactorial)",
+        "D. Very Low (Usually an isolated accident)",
+        "E. 100% (Maternal effect)"
+      ],
+      correct: 3,
+      exp: [
+        "A: ผิด ไม่ใช่โรคพันธุกรรม",
+        "B: ผิด ไม่ได้เกิดจากยีน",
+        "C: ผิด ไม่เกี่ยวกับยีนบวกสิ่งแวดล้อม",
+        "D: ถูกต้อง Amniotic band syndrome ถือเป็น Disruption ซึ่งเป็นอุบัติเหตุในครรภ์ที่ไม่ได้ถ่ายทอดทางพันธุกรรม โอกาสเกิดซ้ำในครรภ์ถัดไปจึงใกล้เคียงศูนย์ (Very Low) [cite: 83, 1109, 1393, 2337]",
+        "E: ผิด ไม่จริง"
+      ]
+    },
+    {
+      q: "Which of the following is considered a MINOR anomaly?",
+      options: [
+        "A. Congenital diaphragmatic hernia",
+        "B. Single transverse palmar crease",
+        "C. Anencephaly",
+        "D. Tetralogy of Fallot",
+        "E. Cleft lip"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด อวัยวะทะลุเข้าปอด เป็น major anomaly",
+        "B: ถูกต้อง เส้นลายมือตัดขวางเส้นเดียว ไม่มีนัยสำคัญทางการแพทย์ ไม่รบกวนการทำงาน จัดเป็น Minor anomaly (แม้จะพบร่วมกับ Down syndrome ได้) [cite: 83, 144, 812, 914]",
+        "C: ผิด ไม่มีสมองใหญ่ เป็น major",
+        "D: ผิด หัวใจพิการ เป็น major",
+        "E: ผิด ต้องผ่าตัด เป็น major"
+      ]
+    },
+    {
+      q: "During phenotypic evaluation, what characterizes proportionate short stature versus disproportionate short stature?",
+      options: [
+        "A. Only absolute height is reduced in disproportionate stature",
+        "B. Upper to lower segment ratio is abnormal in disproportionate stature",
+        "C. BMI is extremely high in proportionate stature",
+        "D. Microcephaly is required for disproportionate stature",
+        "E. It can only be assessed by genetic testing, not clinically"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด ความสูงลดลงทั้งคู่",
+        "B: ถูกต้อง การประเมิน Anthropometrics เช่นสัดส่วนความยาวช่วงบนต่อช่วงล่าง (Upper to lower segment ratio) จะช่วยแยกแยะว่าเด็กเตี้ยแบบสมส่วน (พันธุกรรมเตี้ย ขาดสารอาหาร) หรือเตี้ยแบบไม่สมส่วน (แขนขาสั้นจาก Skeletal dysplasia) [cite: 83, 32, 68, 69]",
+        "C: ผิด ไม่เกี่ยว",
+        "D: ผิด ไม่จำเป็น",
+        "E: ผิด วัดสัดส่วนทางคลินิกได้เลย"
+      ]
+    }
+  ],
+
+  "PBL: Tubal Pregnancy": [
+    {
+      q: "A 28-year-old woman presents with severe right lower quadrant pain, vaginal spotting, and amenorrhea for 7 weeks. She has a history of Pelvic Inflammatory Disease (PID). Which site is statistically the most common for an ectopic implantation?",
+      options: [
+        "A. Interstitial portion of the tube",
+        "B. Isthmus of the tube",
+        "C. Ampulla of the tube",
+        "D. Fimbria",
+        "E. Ovarian surface"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด พบ 2-3%",
+        "B: ผิด พบ 12%",
+        "C: ถูกต้อง ประมาณ 70% ของการตั้งครรภ์นอกมดลูกเกิดขึ้นที่ส่วน Ampulla ของท่อนำไข่ [cite: 2768]",
+        "D: ผิด พบ 11%",
+        "E: ผิด พบ 3%"
+      ]
+    },
+    {
+      q: "Why is a history of Pelvic Inflammatory Disease (PID) a major risk factor for tubal ectopic pregnancy?",
+      options: [
+        "A. It causes hypermotility of the fallopian cilia",
+        "B. It causes inflammation leading to scarring and fibrosis of the fallopian tube",
+        "C. It increases estrogen production, trapping the ovum",
+        "D. It prematurely ruptures the zona pellucida",
+        "E. It induces abnormal placental angiogenesis"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด ทำให้ทำงานแย่ลง",
+        "B: ถูกต้อง การติดเชื้อ PID ทำให้ท่อนำไข่อักเสบ เกิดพังผืด (Fibrosis/Adhesions) ทำให้ท่อตีบแคบ ขัดขวางการเดินทางของตัวอ่อนไปยังมดลูก ตัวอ่อนจึงฝังตัวในท่อนำไข่แทน [cite: 2764, 2768]",
+        "C: ผิด ไม่เกี่ยวกับเอสโตรเจน",
+        "D: ผิด ไม่ใช่กลไก",
+        "E: ผิด การสร้างรกผิดปกติเกิดขึ้นหลังฝังตัว"
+      ]
+    },
+    {
+      q: "A patient with a suspected ruptured ectopic pregnancy presents with blood pressure 90/60 mmHg and a heart rate of 118 beats/min. These vital signs indicate:",
+      options: [
+        "A. Normal physiological changes of early pregnancy",
+        "B. Acute sepsis from PID",
+        "C. Hemodynamic instability due to intra-abdominal hemorrhage",
+        "D. Hyperthyroidism triggered by hCG",
+        "E. Panic attack"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด ปกติไม่ความดันตกและชีพจรเร็วขนาดนี้",
+        "B: ผิด สัญญาณหลักนี้ไม่ได้ชี้เป้าเรื่องไข้ติดเชื้อ",
+        "C: ถูกต้อง ความดันเลือดต่ำ (Hypotension) และชีพจรเต้นเร็ว (Tachycardia) เป็นสัญญาณของ Shock จากการเสียเลือดปริมาณมากในช่องท้อง (Hemoperitoneum) อันเนื่องมาจากท่อนำไข่แตก [cite: 2754, 2769]",
+        "D: ผิด หากเกิดจาก hCG จะไม่ปวดท้องรุนแรง",
+        "E: ผิด ผู้ป่วยซีดและเจ็บท้องชัดเจน"
+      ]
+    },
+    {
+      q: "Which ultrasound finding is most diagnostic of a tubal ectopic pregnancy in a patient with a positive pregnancy test?",
+      options: [
+        "A. Symmetrical enlargement of the uterus",
+        "B. An intrauterine gestational sac with a yolk sac",
+        "C. Absence of an intrauterine pregnancy and presence of an adnexal mass with free fluid",
+        "D. Multiple cysts in both ovaries",
+        "E. A snowstorm appearance in the uterine cavity"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด มดลูกโตเล็กน้อยไม่เฉพาะเจาะจง",
+        "B: ผิด เป็นครรภ์ปกติ",
+        "C: ถูกต้อง การตรวจอัลตราซาวด์ไม่พบถุงการตั้งครรภ์ในมดลูก แต่พบก้อนที่ปีกมดลูก (Adnexal mass) และพบของเหลวอิสระในช่องท้อง (Free fluid/เลือด) เป็นอาการแสดงเฉพาะของการตั้งครรภ์นอกมดลูก [cite: 2763, 2769]",
+        "D: ผิด เป็นอาการ PCOS",
+        "E: ผิด เป็นอาการของ Molar pregnancy"
+      ]
+    },
+    {
+      q: "Serum beta-hCG in an ectopic pregnancy typically differs from a normal intrauterine pregnancy by:",
+      options: [
+        "A. Being excessively high (>100,000 mIU/mL) early on",
+        "B. Dropping to zero immediately",
+        "C. Rising slower than expected for the gestational age",
+        "D. Not being detectable in blood, only in urine",
+        "E. Converting completely into alpha-hCG"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด นั่นคือ Molar pregnancy",
+        "B: ผิด รกยังคงผลิตอยู่แม้ผิดที่",
+        "C: ถูกต้อง ในการตั้งครรภ์นอกมดลูก ปริมาณ beta-hCG จะต่ำกว่าอายุครรภ์ปกติ และอัตราการเพิ่มขึ้นจะช้ากว่าครรภ์ปกติ (ไม่เพิ่มเป็น 2 เท่าใน 48 ชม.)",
+        "D: ผิด ตรวจพบในเลือดได้",
+        "E: ผิด เป็นไปไม่ได้"
+      ]
+    }
+  ],
+
+  "CBD: Embryology Case Debrief": [
+    {
+      q: "A newborn is diagnosed with Trisomy 21 (Down Syndrome). The most common genetic mechanism, accounting for ~95% of these cases, is:",
+      options: [
+        "A. Robertsonian Translocation",
+        "B. Somatic mosaicism",
+        "C. Meiotic nondisjunction during maternal Meiosis I",
+        "D. Mitotic nondisjunction during cleavage",
+        "E. Chromosomal microdeletion"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด พบได้เพียง 3-4%",
+        "B: ผิด พบเพียง 1-2%",
+        "C: ถูกต้อง สาเหตุหลัก (95%) ของ Down syndrome เกิดจากความล้มเหลวของการแยกตัวของโครโมโซมคู่เหมือน (Meiotic nondisjunction) ในระหว่างไมโอซิสระยะที่ 1 ของมารดา ซึ่งสัมพันธ์กับอายุที่มากขึ้น [cite: 2872, 3025, 3026]",
+        "D: ผิด ทำให้เกิด mosaicism",
+        "E: ผิด Trisomy คือโครโมโซมเกินมา 1 แท่งเต็ม ไม่ใช่การขาดหายบางส่วน"
+      ]
+    },
+    {
+      q: "A pregnant woman at 16 weeks gestation presents with a uterus measuring large for dates and an ultrasound showing a 'snowstorm' appearance with no fetal parts. Her beta-hCG is 250,000 mIU/mL. The most likely diagnosis is:",
+      options: [
+        "A. Ectopic pregnancy",
+        "B. Partial Hydatidiform Mole",
+        "C. Complete Hydatidiform Mole",
+        "D. Twin gestation",
+        "E. Placenta Previa"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด จะเห็นก้อนนอกมดลูกและ hCG ต่ำ",
+        "B: ผิด Partial mole จะพบชิ้นส่วนทารกอยู่บ้าง",
+        "C: ถูกต้อง ภาพอัลตราซาวด์แบบ 'Snowstorm' มดลูกโตกว่าอายุครรภ์ hCG สูงปรี๊ด และไม่พบชิ้นส่วนทารก เป็นลักษณะคลาสสิกของครรภ์ไข่ปลาอุกชนิดสมบูรณ์ (Complete Hydatidiform Mole) ซึ่งเกิดจากอสุจิผสมกับไข่ที่ว่างเปล่า [cite: 2882, 2885, 2886, 2888]",
+        "D: ผิด จะเห็นทารกสองคนชัดเจน",
+        "E: ผิด จะเห็นรกล่างและมีเด็กปกติ"
+      ]
+    },
+    {
+      q: "A fetus diagnosed with Posterior Urethral Valves (PUV) shows a grossly distended bladder and severe oligohydramnios. This oligohydramnios directly leads to which lethal complication?",
+      options: [
+        "A. Hydatidiform mole",
+        "B. Pulmonary hypoplasia",
+        "C. Renal agenesis",
+        "D. High-output cardiac failure",
+        "E. Severe anemia"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด ไม่เกี่ยวข้องกัน",
+        "B: ถูกต้อง ทารกขาดน้ำคร่ำ (Oligohydramnios) ทำให้ไม่มีแรงดันน้ำเข้าไปยืดขยายปอด ปอดจึงไม่พัฒนา (Pulmonary hypoplasia) ทารกจึงหายใจล้มเหลวหลังคลอด [cite: 2932, 2934]",
+        "C: ผิด เป็นสาเหตุที่ทำให้เกิดน้ำคร่ำน้อยได้ แต่ PUV คือการอุดตันท่อปัสสาวะ",
+        "D: ผิด เกิดจากทารกซีด (Parvovirus B19)",
+        "E: ผิด ไม่เกี่ยวกับระบบปัสสาวะ"
+      ]
+    },
+    {
+      q: "Omphalopagus conjoined twins are born. They share an umbilicus and a liver bridge but have separate hearts. Embryologically, this condition arises due to incomplete division of the primitive node and streak occurring:",
+      options: [
+        "A. Before day 4 post-fertilization",
+        "B. Between days 4-8 post-fertilization",
+        "C. Between days 8-12 post-fertilization",
+        "D. After day 13 post-fertilization",
+        "E. During organogenesis (weeks 3-8)"
+      ],
+      correct: 3,
+      exp: [
+        "A: ผิด ได้แฝดแยกถุงน้ำคร่ำแยกรก (DiDi)",
+        "B: ผิด ได้แฝดรกเดี่ยวถุงน้ำคร่ำแยก (MoDi)",
+        "C: ผิด ได้แฝดรกเดี่ยวถุงน้ำคร่ำเดี่ยว (MoMo)",
+        "D: ถูกต้อง แฝดติดกัน (Conjoined twins) เกิดจากการแบ่งตัวที่ล่าช้าผิดปกติ คือแยกกันหลังจากวันที่ 13 หลังปฏิสนธิ ซึ่งแนวแกน (primitive streak) เริ่มสร้างแล้ว การแบ่งจึงไม่สมบูรณ์ [cite: 2946, 2947]",
+        "E: ผิด การแยกเพื่อเป็นแฝดเกิดขึ้นก่อนหน้านั้น"
+      ]
+    },
+    {
+      q: "What is the normal vessel composition of a human umbilical cord?",
+      options: [
+        "A. One artery carrying oxygenated blood, two veins carrying deoxygenated blood",
+        "B. Two arteries carrying deoxygenated blood, one vein carrying oxygenated blood",
+        "C. Two arteries carrying oxygenated blood, one vein carrying deoxygenated blood",
+        "D. One artery carrying deoxygenated blood, one vein carrying oxygenated blood",
+        "E. Two arteries and two veins"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด จำนวนสลับกัน",
+        "B: ถูกต้อง สายสะดือปกติมี '2 Arteries, 1 Vein' โดยเส้นเลือดแดง (Arteries) 2 เส้นนำเลือดเสียจากทารกไปรก และเส้นเลือดดำ (Vein) 1 เส้นนำเลือดดีที่มีออกซิเจนจากรกกลับสู่ทารก [cite: 2964, 2965]",
+        "C: ผิด เส้นเลือดแดงสะดือนำเลือดดำ (deoxygenated)",
+        "D: ผิด นั่นคือ Single Umbilical Artery (SUA) ซึ่งผิดปกติ",
+        "E: ผิด เส้นเลือดดำหายไป 1 เส้นตั้งแต่ช่วงต้นของการพัฒนา"
+      ]
+    }
+  ],
+  
+  "PBL: Tubal Pregnancy": [
+    {
+      q: "A 28-year-old woman presents with severe right lower quadrant pain, vaginal spotting, and amenorrhea for 7 weeks. She has a history of Pelvic Inflammatory Disease (PID). Which site is statistically the most common for an ectopic implantation?",
+      options: [
+        "A. Interstitial portion of the tube",
+        "B. Isthmus of the tube",
+        "C. Ampulla of the tube",
+        "D. Fimbria",
+        "E. Ovarian surface"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด พบได้เพียง 2-3%",
+        "B: ผิด พบได้ 12%",
+        "C: ถูกต้อง ประมาณ 70% ของการตั้งครรภ์นอกมดลูกเกิดขึ้นที่ส่วน Ampulla ของท่อนำไข่ เนื่องจากเป็นบริเวณที่เกิดการปฏิสนธิ (Fertilization) ปกติ แต่ตัวอ่อนเดินทางต่อไม่ได้",
+        "D: ผิด พบได้ 11%",
+        "E: ผิด พบได้ 3%"
+      ]
+    },
+    {
+      q: "Based on the patient's history, which pathophysiological mechanism best explains why Pelvic Inflammatory Disease (PID) increases the risk of tubal pregnancy?",
+      options: [
+        "A. Hyperactivity of the fallopian cilia propelling the ovum backward",
+        "B. Endotoxin-induced premature shedding of the zona pellucida",
+        "C. Inflammation leading to scarring, fibrosis, and narrowing of the fallopian tube",
+        "D. Overproduction of estrogen causing tubal spasms",
+        "E. Abnormal differentiation of the tubal epithelium into decidua"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด การอักเสบทำให้การทำงานของซีเลียแย่ลง ไม่ใช่ทำงานหนักขึ้น",
+        "B: ผิด Zona pellucida สลายตัวปกติ ไม่เกี่ยวกับ PID โดยตรง",
+        "C: ถูกต้อง การอักเสบในอุ้งเชิงกราน (PID) ทำให้เกิดพังผืด (Fibrosis) และรอยแผลเป็นในท่อนำไข่ ส่งผลให้ท่อตีบแคบ (Narrowed tube with adhesions) ขัดขวางการเดินทางของตัวอ่อนไปยังมดลูก",
+        "D: ผิด ไม่ได้เกิดจากฮอร์โมนเอสโตรเจนที่มากเกินไป",
+        "E: ผิด ท่อนำไข่ไม่สามารถสร้างเนื้อเยื่อ decidua ที่สมบูรณ์ได้อยู่แล้ว"
+      ]
+    },
+    {
+      q: "The patient is pale, anxious, with a blood pressure of 90/60 mmHg and a heart rate of 118 beats/min. In the context of a ruptured tubal pregnancy, these vital signs are primarily indicative of:",
+      options: [
+        "A. Acute septic shock from untreated PID",
+        "B. Hemodynamic instability due to intra-abdominal hemorrhage (Hemoperitoneum)",
+        "C. Normal physiological cardiovascular changes of early pregnancy",
+        "D. Pulmonary embolism",
+        "E. Vagal response to severe abdominal pain"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด ผู้ป่วยไม่มีไข้สูง (อุณหภูมิ 37.1 C) อาการหลักคือเสียเลือด ไม่ใช่ติดเชื้อในกระแสเลือด",
+        "B: ถูกต้อง ความดันต่ำ (Hypotension) และชีพจรเต้นเร็ว (Tachycardia) ร่วมกับความซีด เป็นสัญญาณคลาสสิกของภาวะช็อกจากการเสียเลือด (Hypovolemic shock) ซึ่งเกิดจากท่อนำไข่แตกและเลือดตกในช่องท้อง (Hemoperitoneum)",
+        "C: ผิด การตั้งครรภ์ปกติไม่ทำให้ความดันตกและชีพจรเร็วขนาดนี้",
+        "D: ผิด ไม่มีอาการหอบเหนื่อยรุนแรงหรือประวัติลิ่มเลือด",
+        "E: ผิด Vagal response มักทำให้ชีพจรเต้นช้า (Bradycardia) ไม่ใช่เต้นเร็ว"
+      ]
+    },
+    {
+      q: "Which specific set of findings on transabdominal and transvaginal ultrasonography is most diagnostic for this patient's condition?",
+      options: [
+        "A. Symmetrical enlarged uterus with a 'snowstorm' appearance",
+        "B. Intrauterine gestational sac with a yolk sac and empty adnexa",
+        "C. Multiple bilateral ovarian cysts with no free fluid",
+        "D. Absence of an intrauterine pregnancy, presence of an adnexal mass, and free fluid in the pelvic cavity",
+        "E. A thick endometrial stripe with a normal sized uterus and no masses"
+      ],
+      correct: 3,
+      exp: [
+        "A: ผิด เป็นลักษณะของครรภ์ไข่ปลาอุก (Molar pregnancy)",
+        "B: ผิด เป็นลักษณะของการตั้งครรภ์ปกติในมดลูก",
+        "C: ผิด เป็นลักษณะของ PCOS",
+        "D: ถูกต้อง อัลตราซาวด์จะไม่พบถุงตั้งครรภ์ในมดลูก แต่จะพบก้อนที่ปีกมดลูก (Adnexal mass) และเลือด/ของเหลวอิสระในช่องท้อง (Free fluid) ซึ่งยืนยันภาวะ Ectopic pregnancy ที่มีการแตก",
+        "E: ผิด ไม่สามารถอธิบายอาการปวดและช็อกได้"
+      ]
+    },
+    {
+      q: "The patient’s laboratory investigations reveal a Hemoglobin of 9.2 g/dL and Hematocrit of 28%. These values, combined with her clinical presentation, directly reflect which intra-abdominal process?",
+      options: [
+        "A. Iron deficiency anemia pre-dating the pregnancy",
+        "B. Physiological hemodilution of pregnancy",
+        "C. Active bleeding and pooling of blood in the peritoneal cavity",
+        "D. Bone marrow suppression by human chorionic gonadotropin",
+        "E. Hemolysis due to blood group incompatibility"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด แม้พบได้ แต่ไม่ใช่อธิบายสถานการณ์วิกฤตเฉียบพลันนี้",
+        "B: ผิด การเจือจางของเลือดในครรภ์ปกติจะไม่ลดต่ำลงรวดเร็วจนผู้ป่วยมีอาการช็อก",
+        "C: ถูกต้อง ระดับ Hb/Hct ที่ต่ำ ร่วมกับอาการหน้ามืด ความดันตก บ่งชี้ชัดเจนว่าผู้ป่วยมีการเสียเลือดปริมาณมากออกนอกระบบหลอดเลือดไปสะสมในช่องท้อง (Hemoperitoneum)",
+        "D: ผิด hCG ไม่ได้ยับยั้งไขกระดูก",
+        "E: ผิด อาการไม่ได้มาจากการแตกของเม็ดเลือดแดง แต่มาจากการเสียเลือดทั้งระบบ"
+      ]
+    },
+    {
+      q: "The patient's obstetric history is \"Gravida 2, Para 0, with one previous spontaneous abortion\". What does this signify in her clinical context?",
+      options: [
+        "A. She has two living children and zero abortions",
+        "B. She is currently pregnant for the second time, has zero viable deliveries, and had one miscarriage",
+        "C. She has been pregnant zero times but had two abortions",
+        "D. She had two full-term pregnancies and zero complications",
+        "E. She is carrying twins in her first pregnancy"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด Para 0 หมายถึงไม่มีการคลอดทารกที่รอดชีวิต/อายุครรภ์ถึงเกณฑ์",
+        "B: ถูกต้อง Gravida 2 หมายถึงตั้งครรภ์ครั้งนี้เป็นครั้งที่ 2, Para 0 คือยังไม่เคยคลอดบุตรที่อายุครรภ์ถึงกำหนด, ส่วนหนึ่งในนั้นจบลงด้วยการแท้ง (Spontaneous abortion)",
+        "C: ผิด G2 คือเคยท้อง 2 ครั้ง",
+        "D: ผิด Para เป็น 0 ไม่ใช่คลอดปกติ",
+        "E: ผิด ครรภ์แฝดนับเป็น G1 หากเพิ่งท้องครั้งแรก"
+      ]
+    },
+    {
+      q: "Which pair of microorganisms is most frequently responsible for ascending infections leading to Pelvic Inflammatory Disease (PID) and subsequent tubal damage?",
+      options: [
+        "A. Escherichia coli and Klebsiella pneumoniae",
+        "B. Staphylococcus aureus and Streptococcus pyogenes",
+        "C. Chlamydia trachomatis and Neisseria gonorrhoeae",
+        "D. Treponema pallidum and Haemophilus ducreyi",
+        "E. Human Papillomavirus (HPV) and Herpes Simplex Virus (HSV)"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด เชื้อในลำไส้ มักทำให้เกิดทางเดินปัสสาวะอักเสบ (UTI)",
+        "B: ผิด เชื้อก่อโรคผิวหนังหรือแผล",
+        "C: ถูกต้อง Chlamydia trachomatis และ Neisseria gonorrhoeae เป็นเชื้อโรคติดต่อทางเพศสัมพันธ์ที่เป็นสาเหตุหลักของ PID ซึ่งทำลายเยื่อบุท่อนำไข่ ทำให้เกิดพังผืดขัดขวางไข่",
+        "D: ผิด เป็นสาเหตุของซิฟิลิสและแผลริมอ่อน",
+        "E: ผิด ไวรัสเหล่านี้ก่อให้เกิดหูดและเริม ไม่ใช่สาเหตุหลักของ tubal fibrosis"
+      ]
+    },
+    {
+      q: "During normal embryogenesis, fertilization occurs in the ampulla. By what day post-fertilization does the blastocyst normally begin to implant into the uterine wall?",
+      options: [
+        "A. Day 1-2",
+        "B. Day 3-4",
+        "C. Day 6-7",
+        "D. Day 10-12",
+        "E. Day 14-16"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด เพิ่งเป็นระยะ zygote/cleavage",
+        "B: ผิด เป็นระยะ Morula กำลังเดินทางเข้ามดลูก",
+        "C: ถูกต้อง การฝังตัว (Implantation) เข้าสู่เยื่อบุโพรงมดลูกปกติจะเริ่มขึ้นประมาณวันที่ 6 หรือ 7 หลังการปฏิสนธิ หากเดินทางช้ากว่านี้ ตัวอ่อนจะฝังตัวในท่อนำไข่แทน",
+        "D: ผิด ตัวอ่อนฝังตัวมิดแล้วในระยะนี้",
+        "E: ผิด ช้าเกินไป"
+      ]
+    },
+    {
+      q: "On abdominal examination, 'guarding and rebound tenderness' were present. Anatomically and pathologically, what do these signs indicate?",
+      options: [
+        "A. Hyperactive bowel sounds due to obstruction",
+        "B. Spasms of the uterine myometrium",
+        "C. Inflammation and irritation of the parietal peritoneum, likely from free blood",
+        "D. Engorgement of the broad ligament veins",
+        "E. Acute urinary retention distending the bladder"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด ไม่ใช่อาการของลำไส้อุดตัน",
+        "B: ผิด มดลูกบีบตัวทำให้ปวดบิด (Cramping) แต่ไม่มี rebound tenderness",
+        "C: ถูกต้อง Guarding (เกร็งหน้าท้อง) และ Rebound tenderness (กดปล่อยแล้วเจ็บ) เป็นสัญญาณของ Peritonitis ในกรณีนี้เลือดปริมาณมากที่ไหลออกมาจากท่อนำไข่ที่แตกไปสัมผัสและระคายเคือง Parietal peritoneum",
+        "D: ผิด ไม่ทำให้เกิดอาการหน้าท้องชัดเจนขนาดนี้",
+        "E: ผิด ไม่ได้อธิบายอาการกดเจ็บปล่อยเจ็บ"
+      ]
+    },
+    {
+      q: "Why is a tubal pregnancy highly prone to spontaneous rupture in the first trimester compared to a normal intrauterine pregnancy?",
+      options: [
+        "A. The fallopian tube lacks a thick, supportive decidual layer and adequate muscular elasticity to accommodate the growing trophoblast.",
+        "B. Tubal secretions are highly acidic, chemically destroying the tube.",
+        "C. The ovary produces excessive progesterone causing the tube to burst.",
+        "D. The embryo in the tube grows three times faster than in the uterus.",
+        "E. Ectopic pregnancies almost always involve multiple gestations (twins)."
+      ],
+      correct: 0,
+      exp: [
+        "A: ถูกต้อง ท่อนำไข่ไม่มีชั้น Decidua ที่หนาพอรองรับการฝังตัว และชั้นกล้ามเนื้อท่อไม่สามารถยืดขยายได้มากเท่ามดลูก เมื่อ Trophoblast ไชทะลุเข้าไปหาเส้นเลือด จึงทำให้ท่อทะลุและแตกได้ง่าย",
+        "B: ผิด ไม่ใช่กลไกทางเคมี แต่เป็นกลไกทางกายภาพและเนื้อเยื่อวิทยา",
+        "C: ผิด โปรเจสเตอโรนทำให้กล้ามเนื้อคลายตัว ไม่ใช่แตก",
+        "D: ผิด อัตราการโตไม่ได้เร็วกว่าปกติ",
+        "E: ผิด ไม่เกี่ยวข้องกัน"
+      ]
+    },
+    {
+      q: "If an ectopic pregnancy implants in the isthmus of the fallopian tube (12% of cases), how does its clinical course typically differ from an ampullary ectopic pregnancy?",
+      options: [
+        "A. It almost never ruptures and resolves spontaneously",
+        "B. It typically ruptures much earlier (weeks 6-8) because the isthmus is the narrowest portion of the tube",
+        "C. It presents with painless vaginal bleeding",
+        "D. It can grow safely until the second trimester",
+        "E. It implants in the myometrium directly"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด แตกเกือบทุกรายหากปล่อยไว้",
+        "B: ถูกต้อง บริเวณ Isthmus เป็นส่วนที่แคบที่สุดของท่อนำไข่ หากตัวอ่อนฝังตัวที่นี่ จะทำให้ท่อนำไข่แตกเร็วมาก (ช่วงอายุครรภ์ 6-8 สัปดาห์) และเสียเลือดรุนแรง",
+        "C: ผิด Ectopic pregnancy ทำให้ปวดมาก ไม่ใช่ painless",
+        "D: ผิด แตกตั้งแต่ไตรมาสแรก",
+        "E: ผิด ไม่ใช่ส่วน Interstitial ที่อยู่ในเนื้อมดลูก"
+      ]
+    },
+    {
+      q: "An ectopic pregnancy localized to the interstitial (cornual) region (2-3% of cases) is particularly dangerous because:",
+      options: [
+        "A. It cannot be detected by a pregnancy test",
+        "B. It mimics appendicitis perfectly",
+        "C. It can grow larger (up to 12-16 weeks) before rupturing, leading to massive, catastrophic hemorrhage from the uterine artery branches.",
+        "D. It is highly associated with developing into a malignant choriocarcinoma.",
+        "E. It always leads to bilateral fallopian tube necrosis."
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด ตรวจพบ hCG ได้ปกติ",
+        "B: ผิด อาจปวดคนละแบบและมีเลือดออก",
+        "C: ถูกต้อง ส่วน Interstitial ฝังอยู่ในกล้ามเนื้อมดลูก จึงขยายตัวได้นานกว่า (อาจถึง 12-16 สัปดาห์) แต่เมื่อแตกจะอันตรายถึงชีวิต เพราะบริเวณนี้มีแขนงเส้นเลือดแดง Uterine และ Ovarian artery มาหล่อเลี้ยงเยอะมาก ทำให้เสียเลือดมหาศาล",
+        "D: ผิด ไม่เกี่ยวกับมะเร็งรก",
+        "E: ผิด ไม่ทำให้ท่ออีกข้างเน่า"
+      ]
+    },
+    {
+      q: "The patient complains of 'shoulder tip pain' while lying down. This clinical sign (Kehr's sign) is caused by:",
+      options: [
+        "A. Strain from hyperventilation",
+        "B. Ectopic implantation occurring in the lung cavity",
+        "C. Blood irritating the diaphragm, with referred pain transmitted via the phrenic nerve (C3-C5)",
+        "D. Muscle cramps from severe anemia",
+        "E. Referred pain from the expanding cervix"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด ไม่ใช่อาการปวดกล้ามเนื้อจากการหายใจ",
+        "B: ผิด เป็นไปไม่ได้ในบริบทนี้",
+        "C: ถูกต้อง เลือดที่คั่งในช่องท้องปริมาณมากเมื่อผู้ป่วยนอนราบ จะไหลไปโดนกะบังลม (Diaphragm) ทำให้เกิดการระคายเคือง และส่งสัญญาณปวดร้าวไปยังไหล่ (Referred pain) ผ่านเส้นประสาท Phrenic (C3, C4, C5)",
+        "D: ผิด ไม่ใช่ตะคริว",
+        "E: ผิด อาการร้าวจากปากมดลูกมักไปที่ก้นกบหรือหลังล่าง"
+      ]
+    },
+    {
+      q: "A patient presents with right lower quadrant pain. How does a positive Serum Beta-hCG specifically help the physician immediately differentiate between a ruptured right tubal pregnancy and acute appendicitis?",
+      options: [
+        "A. Appendicitis causes hCG to drop, while ectopic pregnancy causes it to spike",
+        "B. Both conditions have positive hCG, but ectopic is much higher",
+        "C. Acute appendicitis does not produce human chorionic gonadotropin (hCG), making a positive test definitively point towards a pregnancy complication.",
+        "D. hCG levels correlate directly with the size of the appendix",
+        "E. White blood cell count is only elevated in ectopic pregnancies"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด ไส้ติ่งอักเสบไม่สร้าง hCG",
+        "B: ผิด ไส้ติ่งไม่มี hCG",
+        "C: ถูกต้อง อาการปวดท้องน้อยขวาล่างเหมือนกัน แต่ hCG ผลิตจาก Trophoblast ของตัวอ่อนเท่านั้น การตรวจพบ hCG เป็นบวกจึงตัดไส้ติ่งอักเสบเดี่ยวๆ ทิ้งไป และพุ่งเป้าไปที่ภาวะแทรกซ้อนของการตั้งครรภ์ทันที",
+        "D: ผิด ไม่เกี่ยวข้องกัน",
+        "E: ผิด ไส้ติ่งอักเสบ WBC ก็สูงได้"
+      ]
+    },
+    {
+      q: "During the pelvic exam, 'cervical motion tenderness' (CMT) is elicited. This physical finding implies:",
+      options: [
+        "A. The cervix is dilating for an impending miscarriage",
+        "B. The presence of peritoneal inflammation in the pelvis, causing pain when the pelvic organs are moved.",
+        "C. A cervical ectopic pregnancy",
+        "D. A normal response in a pregnant patient",
+        "E. Complete tearing of the broad ligament"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด อาการแท้งมักพบปากมดลูกเปิด แต่การโยกแล้วเจ็บคือคนละประเด็น",
+        "B: ถูกต้อง Cervical motion tenderness (Chandelier sign) เกิดจากการเอามือโยกปากมดลูกแล้วไปดึงรั้งเนื้อเยื่อข้างเคียงในอุ้งเชิงกรานที่มีการอักเสบ (จาก PID หรือเลือดที่ไหลออกมา) ทำให้ผู้ป่วยเจ็บปวดมาก",
+        "C: ผิด Cervical ectopic พบได้ยากมาก (<1%)",
+        "D: ผิด ไม่ใช่อาการปกติ",
+        "E: ผิด ไม่จำเป็นต้องฉีกขาดขนาดนั้น"
+      ]
+    },
+    {
+      q: "The normal mucosal lining of the fallopian tube, which facilitates the transport of the ovum, consists of:",
+      options: [
+        "A. Stratified squamous epithelium",
+        "B. Simple cuboidal epithelium with microvilli",
+        "C. Ciliated simple columnar epithelium",
+        "D. Pseudostratified columnar epithelium with goblet cells",
+        "E. Transitional epithelium"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด พบที่ช่องคลอด",
+        "B: ผิด พบที่ท่อไต",
+        "C: ถูกต้อง เยื่อบุท่อนำไข่เป็น Ciliated simple columnar epithelium ซึ่งมีขนซีเลียคอยพัดโบกไข่หรือตัวอ่อนให้เคลื่อนที่เข้าสู่มดลูก การติดเชื้อ (PID) จะทำลายซีเลียนี้ ทำให้เกิด Ectopic pregnancy",
+        "D: ผิด พบที่หลอดลม",
+        "E: ผิด พบที่กระเพาะปัสสาวะ"
+      ]
+    },
+    {
+      q: "If an ultrasound of a patient with suspected ectopic pregnancy reveals a 'pseudo-gestational sac' inside the uterus, what is this structure composed of?",
+      options: [
+        "A. A true embryo that has died",
+        "B. A fluid collection within the decidualized endometrium caused by bleeding or hormonal changes, mimicking a sac.",
+        "C. A molar pregnancy beginning to form",
+        "D. A retained piece of placenta from a previous pregnancy",
+        "E. An expanding uterine fibroid"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด ถ้ามีตัวอ่อนจริงจะไม่เรียกว่า pseudo-sac",
+        "B: ถูกต้อง ถุงน้ำเทียม (Pseudo-gestational sac) เกิดจากการสะสมของน้ำหรือเลือดในโพรงมดลูกที่หนาตัวขึ้นจากฮอร์โมนของการตั้งครรภ์ ทำให้ดูคล้ายถุงตั้งครรภ์ แต่จะไม่มี Yolk sac หรือ Fetal pole อยู่ข้างใน",
+        "C: ผิด ไม่ใช่พยาธิสภาพของ Molar",
+        "D: ผิด ไม่ใช่ชิ้นส่วนรกล้าหลัง",
+        "E: ผิด เนื้องอกจะดูเป็นก้อนเนื้อทึบ"
+      ]
+    },
+    {
+      q: "At 7 weeks gestation, a normal intrauterine pregnancy should exhibit a beta-hCG doubling time of approximately 48 hours. In an ectopic pregnancy, the beta-hCG profile typically:",
+      options: [
+        "A. Doubles every 12 hours",
+        "B. Remains completely flat at 0 mIU/mL",
+        "C. Rises slower than normal, failing to double every 48 hours",
+        "D. Converts to alpha-hCG",
+        "E. Exceeds 200,000 mIU/mL rapidly"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด ไม่มีทางเร็วขนาดนี้",
+        "B: ผิด มีการสร้าง hCG จาก Trophoblast อยู่",
+        "C: ถูกต้อง ในการตั้งครรภ์นอกมดลูก เนื้อเยื่อรอบๆ ไม่เอื้อต่อการเจริญเติบโตของรก (Trophoblast) ทำให้การสร้าง beta-hCG เพิ่มขึ้นแบบผิดปกติ (Suboptimal rise) คือเพิ่มขึ้นน้อยกว่า 66% ใน 48 ชั่วโมง",
+        "D: ผิด ไม่มีการเปลี่ยนรูปแบบนี้",
+        "E: ผิด นั่นคือพยาธิสภาพของ Molar pregnancy"
+      ]
+    },
+    {
+      q: "Medical management with Methotrexate is an option for ectopic pregnancy ONLY IF the patient is:",
+      options: [
+        "A. Presenting with severe hypotension (e.g., 90/60 mmHg)",
+        "B. Diagnosed with a ruptured fallopian tube",
+        "C. Hemodynamically stable, with an unruptured mass, and low beta-hCG levels",
+        "D. Over 12 weeks pregnant",
+        "E. Experiencing massive hemoperitoneum"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด ความดันตกหมายถึงช็อก ต้องผ่าตัดฉุกเฉิน",
+        "B: ผิด ถ้าแตกแล้วต้องผ่าตัด",
+        "C: ถูกต้อง ยา Methotrexate ใช้สลายตัวอ่อนได้ผลดีเฉพาะในกรณีที่ท่อนำไข่ยังไม่แตก (Unruptured) ผู้ป่วยสัญญาณชีพปกติ (Hemodynamically stable) และระดับ hCG ไม่สูงเกินไป",
+        "D: ผิด ยิ่งก้อนใหญ่ ยิ่งใช้ยาไม่ได้ผล",
+        "E: ผิด เลือดออกในช่องท้องคือข้อห้ามใช้ยา"
+      ]
+    },
+    {
+      q: "In the context of embryology, the 'tubal pregnancy' represents a failure of which specific process?",
+      options: [
+        "A. Capacitation of the sperm",
+        "B. Cleavage of the zygote",
+        "C. Transport of the blastocyst to the uterine cavity prior to implantation",
+        "D. Formation of the trilaminar germ disc",
+        "E. Gastrulation"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด การเตรียมพร้อมของอสุจิเกิดขึ้นปกติ จึงปฏิสนธิได้",
+        "B: ผิด ตัวอ่อนแบ่งเซลล์ได้ปกติ",
+        "C: ถูกต้อง Tubal ectopic pregnancy คือความล้มเหลวของการขนส่งตัวอ่อน (Blastocyst) ผ่านท่อนำไข่เข้าไปยังโพรงมดลูก ตัวอ่อนจึงฝังตัวลงบนผนังท่อนำไข่ทันทีเมื่อถึงวันที่ 6-7",
+        "D: ผิด เกิดขึ้นหลังจากฝังตัวแล้ว",
+        "E: ผิด เกิดขึ้นหลังฝังตัวแล้ว"
+      ]
+    }
+  ],
+
+  "CBD: Embryology Case Debrief": [
+    {
+      q: "A newborn is diagnosed with Trisomy 21 (Down Syndrome). The most common genetic mechanism, accounting for ~95% of these cases, is:",
+      options: [
+        "A. Robertsonian Translocation",
+        "B. Somatic mosaicism",
+        "C. Meiotic nondisjunction during maternal Meiosis I",
+        "D. Mitotic nondisjunction during cleavage",
+        "E. Chromosomal microdeletion"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด พบได้เพียง 3-4%",
+        "B: ผิด พบเพียง 1-2%",
+        "C: ถูกต้อง สาเหตุหลัก (95%) ของ Down syndrome เกิดจากความล้มเหลวของการแยกตัวของโครโมโซมคู่เหมือน (Meiotic nondisjunction) ในระหว่างไมโอซิสระยะที่ 1 ของมารดา ซึ่งสัมพันธ์กับอายุที่มากขึ้น",
+        "D: ผิด ทำให้เกิด mosaicism",
+        "E: ผิด Trisomy คือโครโมโซมเกินมา 1 แท่งเต็ม ไม่ใช่การขาดหายบางส่วน"
+      ]
+    },
+    {
+      q: "Why is advanced maternal age (e.g., >35 years) strongly associated with an increased risk of meiotic nondisjunction leading to Down syndrome?",
+      options: [
+        "A. Older ova are more susceptible to viral infections",
+        "B. Primary oocytes are arrested in prophase I (dictyate stage) for decades, increasing the degradation of cohesive proteins.",
+        "C. The uterus becomes hostile to euploid embryos over time",
+        "D. Sperm fertilize older eggs irregularly",
+        "E. Meiosis II begins before ovulation in older women"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด ไม่เกี่ยวกับไวรัส",
+        "B: ถูกต้อง เซลล์ไข่ของมารดาถูกสร้างและหยุดพักอยู่ที่ระยะ Prophase I (Dictyate stage) ตั้งแต่แม่ยังเป็นทารกในครรภ์ ยิ่งมารดาอายุมาก โปรตีนที่ยึดโครโมโซม (Cohesin) ยิ่งเสื่อมสภาพ ทำให้เกิดการแยกตัวผิดพลาด (Nondisjunction) เมื่อไข่ตก",
+        "C: ผิด ไม่ใช่กลไกของมดลูก",
+        "D: ผิด ไม่เกี่ยวกับการปฏิสนธิ",
+        "E: ผิด Meiosis II เริ่มตอนปฏิสนธิเหมือนเดิม"
+      ]
+    },
+    {
+      q: "A pregnant woman undergoes a First-Trimester Combined Screening. Which combination of markers is utilized to assess the risk of fetal aneuploidy?",
+      options: [
+        "A. Ultrasound Nuchal Translucency (NT) + Maternal Serum PAPP-A and free β-hCG",
+        "B. Amniocentesis + Alpha-fetoprotein (AFP)",
+        "C. Karyotyping of maternal blood cells",
+        "D. Ultrasound femur length + Maternal Estriol",
+        "E. Cell-free DNA exclusively"
+      ],
+      correct: 0,
+      exp: [
+        "A: ถูกต้อง การคัดกรองในไตรมาสแรกใช้การวัดความหนาของน้ำที่หลังคอทารก (NT) ผ่านอัลตราซาวด์ ร่วมกับการเจาะเลือดแม่ดูค่า PAPP-A (มักจะต่ำ) และ free beta-hCG (มักจะสูง)",
+        "B: ผิด เจาะน้ำคร่ำเป็นการวินิจฉัย (Diagnosis) ไม่ใช่ Screening",
+        "C: ผิด โครโมโซมแม่ไม่บอกโครโมโซมลูก",
+        "D: ผิด เป็นพารามิเตอร์ของไตรมาสสอง",
+        "E: ผิด cfDNA คือ NIPT ซึ่งเป็นการเจาะเลือดแยกต่างหาก ไม่ใช่ First-Trimester Combined Test แบบดั้งเดิม"
+      ]
+    },
+    {
+      q: "A pregnant woman at 16 weeks gestation presents with a uterus measuring large for dates and an ultrasound showing a 'snowstorm' appearance with no fetal parts. Her beta-hCG is 250,000 mIU/mL. The most likely diagnosis is:",
+      options: [
+        "A. Ectopic pregnancy",
+        "B. Partial Hydatidiform Mole",
+        "C. Complete Hydatidiform Mole",
+        "D. Twin gestation",
+        "E. Placenta Previa"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด จะเห็นก้อนนอกมดลูกและ hCG ต่ำ",
+        "B: ผิด Partial mole จะพบชิ้นส่วนทารกอยู่บ้าง",
+        "C: ถูกต้อง ภาพอัลตราซาวด์แบบ 'Snowstorm' (เม็ดพายุหิมะ/พวงองุ่น), มดลูกโตเกินอายุครรภ์, hCG สูงปรี๊ด, และไม่พบชิ้นส่วนทารก เป็นลักษณะคลาสสิกของครรภ์ไข่ปลาอุกชนิดสมบูรณ์ (Complete Hydatidiform Mole)",
+        "D: ผิด จะเห็นทารกสองคนชัดเจน",
+        "E: ผิด จะเห็นรกล่างและมีเด็กปกติ"
+      ]
+    },
+    {
+      q: "Genetically, a Complete Hydatidiform Mole is characterized by:",
+      options: [
+        "A. A triploid karyotype (69, XXY) with fetal parts",
+        "B. An exclusively paternal diploid genome (e.g., 46, XX) resulting from the fertilization of an 'empty' ovum",
+        "C. A maternal diploid genome with no paternal input (Parthenogenesis)",
+        "D. Trisomy 16",
+        "E. Monosomy X (Turner syndrome)"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด นั่นคือ Partial mole ที่ไข่ปกติ 1 ใบถูกอสุจิ 2 ตัวผสม",
+        "B: ถูกต้อง Complete mole เกิดจากอสุจิ 1 หรือ 2 ตัว เข้าไปผสมกับไข่ที่ 'ว่างเปล่า' (ไม่มีโครโมโซมแม่) โครโมโซมทั้งหมดจึงมาจากพ่อ (Paternal origin) มักเป็น 46, XX ทำให้เนื้อเยื่อรกรุกรานหนักและไม่มีทารก",
+        "C: ผิด ไม่ใช่มาจากแม่ฝ่ายเดียว",
+        "D: ผิด สาเหตุหลักของการแท้งทั่วไป ไม่ใช่ Molar",
+        "E: ผิด ทารกมีชีวิตได้ (ผู้หญิงคอพังผืด) ไม่ใช่ Molar"
+      ]
+    },
+    {
+      q: "The patient with a Complete Molar Pregnancy exhibits tachycardia and hypertension. This is mechanistically explained by the structural similarity of the beta-hCG alpha-subunit to which other hormone?",
+      options: [
+        "A. Insulin",
+        "B. Cortisol",
+        "C. Thyroid Stimulating Hormone (TSH)",
+        "D. Oxytocin",
+        "E. Prolactin"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด โครงสร้างไม่เหมือนกัน",
+        "B: ผิด โครงสร้างไม่เหมือนกัน",
+        "C: ถูกต้อง ฮอร์โมน hCG มีหน่วยย่อย Alpha (α-subunit) ที่หน้าตาเหมือนกับ TSH, LH, และ FSH ทุกประการ เมื่อ hCG สูงแตะหลักแสน มันจะไปจับกับ Receptor ของ TSH ที่ต่อมไทรอยด์ ทำให้เกิดภาวะไทรอยด์เป็นพิษชั่วคราว (Tachycardia) และครรภ์เป็นพิษ",
+        "D: ผิด โครงสร้างไม่เหมือนกัน",
+        "E: ผิด โครงสร้างไม่เหมือนกัน"
+      ]
+    },
+    {
+      q: "A pregnant patient presents in the third trimester with sudden, painless, bright red vaginal bleeding. Ultrasound confirms the placenta is completely covering the internal cervical os. What is the diagnosis?",
+      options: [
+        "A. Placental Abruption",
+        "B. Complete Placenta Previa",
+        "C. Vasa Previa",
+        "D. Uterine Rupture",
+        "E. Ectopic Pregnancy"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด รกลอกตัวก่อนกำหนดจะมีเลือดออกพร้อม 'อาการปวดท้องรุนแรง' มดลูกแข็งเกร็ง",
+        "B: ถูกต้อง รกเกาะต่ำชนิดสมบูรณ์ (Complete Placenta Previa) มักมาด้วยอาการเลือดออกทางช่องคลอดสีแดงสด ปริมาณมาก โดย 'ไม่มีอาการปวดท้อง' (Painless) และคลำมดลูกได้นิ่มปกติ",
+        "C: ผิด เส้นเลือดสายสะดือขวางปากมดลูก เด็กจะหัวใจเต้นช้าตอนน้ำเดิน",
+        "D: ผิด มดลูกแตกจะเจ็บปวดรุนแรงและเด็กหลุดเข้าช่องท้อง",
+        "E: ผิด เกิดในไตรมาสแรก"
+      ]
+    },
+    {
+      q: "Which clinical examination is ABSOLUTELY CONTRAINDICATED in a patient suspected of having Placenta Previa before an ultrasound is performed?",
+      options: [
+        "A. Listening to fetal heart sounds",
+        "B. Checking maternal blood pressure",
+        "C. Digital vaginal examination",
+        "D. Abdominal palpation (Leopold maneuvers)",
+        "E. Drawing maternal blood for CBC"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด ทำได้และควรทำ",
+        "B: ผิด ทำได้และควรทำ",
+        "C: ถูกต้อง ห้ามทำการล้วงตรวจภายใน (Digital vaginal exam) เด็ดขาด เพราะนิ้วอาจไปจิ้มหรือเซาะโดนเนื้อเยื่อรกที่เกาะขวางปากมดลูกอยู่ ทำให้เกิดการตกเลือดอย่างรุนแรงเฉียบพลันจนแม่และเด็กเสียชีวิตได้ (Massive hemorrhage)",
+        "D: ผิด คลำหน้าท้องเบาๆ ทำได้",
+        "E: ผิด เจาะเลือดแขนแม่ทำได้"
+      ]
+    },
+    {
+      q: "A previous Cesarean section significantly increases the risk of Placenta Previa in subsequent pregnancies. What is the embryological/pathological reason for this?",
+      options: [
+        "A. The scar secretes high levels of estrogen attracting the blastocyst",
+        "B. The surgical scar has altered decidua with poor vascularity, causing the blastocyst to implant lower or the placenta to spread wider to compensate.",
+        "C. The surgery physically widens the cervical canal",
+        "D. Scar tissue forces the fallopian tubes to empty lower in the uterus",
+        "E. C-sections cause permanent polyhydramnios"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด แผลเป็นไม่สร้างฮอร์โมน",
+        "B: ถูกต้อง บริเวณแผลผ่าตัดเดิม (Scar tissue) จะมีชั้น Decidua ที่ไม่สมบูรณ์และเลือดมาเลี้ยงน้อย (Poor vascularity) ตัวอ่อนจึงเลี่ยงไปฝังตัวในตำแหน่งที่ต่ำกว่าปกติ หรือรกลุกลามขยายพื้นที่กว้างขึ้นเพื่อหาเลือดไปเลี้ยง ทำให้ไปคลุมปากมดลูก",
+        "C: ผิด ไม่ได้ถ่างปากมดลูกถาวร",
+        "D: ผิด ท่อนำไข่เปิดที่เดิม",
+        "E: ผิด ไม่เกี่ยวข้องกัน"
+      ]
+    },
+    {
+      q: "A male fetus is diagnosed with Posterior Urethral Valves (PUV). On ultrasound, this typically presents with a grossly distended bladder and severe oligohydramnios. PUV originates from an embryological anomaly of the:",
+      options: [
+        "A. Mullerian ducts",
+        "B. Metanephric blastema",
+        "C. Urogenital membrane / Wolffian ducts",
+        "D. Allantois",
+        "E. Ureteric bud"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด สร้างมดลูกและช่องคลอดส่วนบนในผู้หญิง",
+        "B: ผิด สร้างเนื้อเยื่อกรองปัสสาวะของไต",
+        "C: ถูกต้อง PUV เกิดจากความผิดปกติของเยื่อบุ Urogenital membrane หรือการเชื่อมต่อของท่อ Wolffian (Mesonephric duct) ที่สลายตัวไม่หมด เกิดเป็นแผ่นพังผืดขวางทางเดินปัสสาวะในท่อปัสสาวะส่วน prostatic urethra ของทารกชาย",
+        "D: ผิด เป็นทางเชื่อมสะดือกับกระเพาะปัสสาวะ (Urachus)",
+        "E: ผิด สร้างท่อไตและกรวยไต"
+      ]
+    },
+    {
+      q: "In the case of the fetus with PUV and severe oligohydramnios, what is the direct, primary cause of neonatal death immediately after birth (Potter Sequence)?",
+      options: [
+        "A. Chronic renal failure and uremia",
+        "B. Rupture of the fetal bladder",
+        "C. Severe limb contractures",
+        "D. Pulmonary hypoplasia leading to respiratory failure",
+        "E. Cardiac tamponade"
+      ],
+      correct: 3,
+      exp: [
+        "A: ผิด ทารกมักตายจากปอดก่อนที่ไตวายจะแสดงผลรุนแรง",
+        "B: ผิด ไม่ใช่สาเหตุการตายหลักหลังคลอด",
+        "C: ผิด ข้อติดเดินไม่ได้ แต่ไม่ทำให้ตายทันที",
+        "D: ถูกต้อง น้ำคร่ำ (ซึ่งมาจากฉี่ทารก) จำเป็นมากต่อการถูกสูดดมเข้าไปขยายถุงลมปอด หากไม่มีน้ำคร่ำ (Oligohydramnios) ปอดจะไม่พัฒนา (Pulmonary hypoplasia) ทารกจึงขาดออกซิเจนและหายใจล้มเหลวทันทีที่คลอด",
+        "E: ผิด ไม่เกี่ยวกับหัวใจ"
+      ]
+    },
+    {
+      q: "A condition characterized by excessive amniotic fluid (Polyhydramnios) is most logically caused by which of the following fetal anomalies?",
+      options: [
+        "A. Bilateral renal agenesis",
+        "B. Posterior Urethral Valves",
+        "C. Esophageal atresia",
+        "D. Premature rupture of membranes",
+        "E. Placental insufficiency"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด ไม่มีไต = ไม่มีฉี่ = น้ำคร่ำน้อย",
+        "B: ผิด ฉี่ไม่ออก = น้ำคร่ำน้อย",
+        "C: ถูกต้อง ทารกต้องกลืนน้ำคร่ำเพื่อรักษาสมดุล หากหลอดอาหารตัน (Esophageal atresia) ทารกกลืนน้ำไม่ได้ น้ำคร่ำจึงล้นคั่งอยู่ในมดลูก เกิดภาวะ Polyhydramnios",
+        "D: ผิด น้ำคร่ำรั่วออกไป = น้ำคร่ำน้อย",
+        "E: ผิด เลือดไปเลี้ยงทารกน้อย ทารกฉี่น้อย = น้ำคร่ำน้อย"
+      ]
+    },
+    {
+      q: "Omphalopagus conjoined twins are born sharing a liver bridge but having separate hearts. Embryologically, conjoined twins arise due to incomplete division of the primitive node and streak. This critical error occurs:",
+      options: [
+        "A. During cleavage (Days 1-3)",
+        "B. During blastocyst hatching (Days 4-8)",
+        "C. During bilaminar disc formation (Days 8-12)",
+        "D. After Day 13 post-fertilization",
+        "E. During fetal organ maturation (Weeks 12-16)"
+      ],
+      correct: 3,
+      exp: [
+        "A: ผิด แยกตอนนั้นจะได้แฝด Didi (2 รก 2 ถุงน้ำคร่ำ)",
+        "B: ผิด แยกตอนนั้นจะได้แฝด Modi (1 รก 2 ถุงน้ำคร่ำ)",
+        "C: ผิด แยกตอนนั้นจะได้แฝด Momo (1 รก 1 ถุงน้ำคร่ำ) ที่แยกสมบูรณ์",
+        "D: ถูกต้อง แฝดติดกัน (Conjoined twins) เกิดจากการที่ตัวอ่อนพยายามจะแบ่งร่างช้าเกินไป คือแบ่งหลังจากวันที่ 13 ซึ่งแนวแกนกลางลำตัว (Primitive streak) เริ่มก่อตัวขึ้นแล้ว ทำให้แยกจากกันไม่ขาด",
+        "E: ผิด ช้าเกินไป ร่างกายสร้างเสร็จหมดแล้ว"
+      ]
+    },
+    {
+      q: "All conjoined twins, including the Omphalopagus twins in Case 5, strictly belong to which twinning category regarding zygosity and chorionicity?",
+      options: [
+        "A. Dizygotic, Dichorionic, Diamniotic",
+        "B. Monozygotic, Dichorionic, Diamniotic",
+        "C. Monozygotic, Monochorionic, Diamniotic",
+        "D. Monozygotic, Monochorionic, Monoamniotic (MoMo)",
+        "E. Dizygotic, Monochorionic, Monoamniotic"
+      ],
+      correct: 3,
+      exp: [
+        "A: ผิด Dizygotic (แฝดเทียม/คนละใบ) ไม่มีทางตัวติดกัน",
+        "B: ผิด ไม่ใช่",
+        "C: ผิด ตัวอ่อนต้องอยู่ในถุงน้ำคร่ำเดียวกันถึงจะติดกันได้",
+        "D: ถูกต้อง แฝดติดกันเกิดจากไข่ใบเดียวผสมอสุจิตัวเดียว (Monozygotic) และแยกตัวช้ามาก ทำให้ต้องใช้รกร่วมกัน (Monochorionic) และอยู่ในถุงน้ำคร่ำเดียวกัน (Monoamniotic)",
+        "E: ผิด แฝดเทียมไม่มีทางใช้รกร่วมกัน"
+      ]
+    },
+    {
+      q: "What is the normal anatomical vessel composition of a human umbilical cord at term?",
+      options: [
+        "A. Two veins carrying oxygenated blood, one artery carrying deoxygenated blood",
+        "B. Two arteries carrying deoxygenated blood, one vein carrying oxygenated blood",
+        "C. One artery and one vein",
+        "D. Two arteries and two veins",
+        "E. One vein carrying deoxygenated blood, two arteries carrying oxygenated blood"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด สลับหน้าที่กัน",
+        "B: ถูกต้อง สายสะดือปกติมี '2 Arteries, 1 Vein' โดยเส้นเลือดแดง 2 เส้นนำเลือดดำ (deoxygenated) จากตัวเด็กไปฟอกที่รก และเส้นเลือดดำ 1 เส้นนำเลือดแดง (oxygenated) จากรกกลับเข้าสู่ตัวเด็ก",
+        "C: ผิด มี 3 เส้น ไม่ใช่ 2 (ถ้ามี 2 เรียก Single Umbilical Artery ซึ่งผิดปกติ)",
+        "D: ผิด เส้นเลือดดำหายไป 1 เส้นตั้งแต่ตอนเป็นตัวอ่อน",
+        "E: ผิด สลับหน้าที่กัน"
+      ]
+    },
+    {
+      q: "The two normal umbilical arteries, which wrap around the umbilical vein, are embryologically derived from direct anterior branches of the:",
+      options: [
+        "A. Fetal aorta",
+        "B. Fetal inferior vena cava",
+        "C. Allantois and fetal internal iliac arteries",
+        "D. Vitelline veins",
+        "E. Hepatic portal system"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด แตกแขนงมาจากเส้นเลือดเชิงกราน ไม่ใช่ Aorta โดยตรง",
+        "B: ผิด เป็นเส้นเลือดดำ",
+        "C: ถูกต้อง เส้นเลือดแดงสะดือพัฒนามาจาก Allantois และเป็นแขนงต่อเนื่องมาจากเส้นเลือดแดง Internal iliac ของทารก เพื่อปั๊มเลือดเสียกลับไปที่รก",
+        "D: ผิด สร้างเส้นเลือดดำ",
+        "E: ผิด สร้างตับ"
+      ]
+    },
+    {
+      q: "Which specific component of the umbilical cord provides crucial resilient cushioning, preventing the thin-walled umbilical vessels from being kinked or compressed during fetal movement?",
+      options: [
+        "A. The amniotic epithelium",
+        "B. The chorionic plate",
+        "C. Wharton's Jelly",
+        "D. The allantoic duct",
+        "E. The perivascular smooth muscle layer"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด เป็นแค่เยื่อบุบางๆ ด้านนอก",
+        "B: ผิด เป็นส่วนของรก",
+        "C: ถูกต้อง Wharton's Jelly เป็นเนื้อเยื่อเกี่ยวพันชนิดพิเศษ (Mucopolysaccharide-rich) ที่ยืดหยุ่นสูง ทำหน้าที่เป็นกันชน (Cushion) ป้องกันไม่ให้เส้นเลือดสะดือถูกกดทับ บิดงอ หรือตีบตันเมื่อเด็กขยับตัวหรือสายสะดือพันกัน",
+        "D: ผิด เป็นท่อระบายของเสียที่ฝ่อไปแล้ว",
+        "E: ผิด ไม่ใช่ส่วนที่ให้ความยืดหยุ่นหลักต่อสายสะดือทั้งเส้น"
+      ]
+    },
+    {
+      q: "During delivery, a fetus is found to have a 'Nuchal Cord' wrapped tightly 360 degrees around its neck. What is the physiological sequence of distress if the cord becomes severely compressed in the birth canal?",
+      options: [
+        "A. Both arteries and veins are compressed simultaneously, causing instant stroke",
+        "B. The thick-walled arteries are compressed first, cutting off blood to the placenta",
+        "C. The thin-walled umbilical vein is compressed first, cutting off oxygenated blood supply to the fetus, followed by artery compression.",
+        "D. The fetal jugular veins are compressed, but the umbilical cord remains unaffected",
+        "E. The trachea is crushed, preventing the fetus from breathing amniotic fluid"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด เส้นเลือดดำผนังบางกว่า จะถูกกดทับก่อนเสมอ",
+        "B: ผิด เส้นเลือดแดงผนังหนาและมีแรงดันสูงกว่า จึงทนแรงกดได้มากกว่า",
+        "C: ถูกต้อง เมื่อสายสะดือถูกรัดแน่น เส้นเลือดดำสะดือ (Umbilical vein) ซึ่งผนังบางกว่าจะตีบตันเป็นอันดับแรก ทำให้ทารกขาดออกซิเจน (Hypoxia) ทันที ส่งผลให้เกิดกราฟหัวใจเต้นช้าแบบ Variable decelerations หากรัดแน่นขึ้นอีก เส้นเลือดแดงจึงจะตีบตามมา",
+        "D: ผิด ปัญหาหลักอยู่ที่สายสะดือถูกรัด",
+        "E: ผิด เด็กไม่ได้ใช้ปอดหายใจในช่องคลอด"
+      ]
+    },
+    {
+      q: "A pregnant patient with pre-eclampsia is found to have a 'partial molar pregnancy'. In contrast to a complete mole, a partial mole is generally characterized by:",
+      options: [
+        "A. A diploid karyotype (46, XX)",
+        "B. An empty egg fertilized by two sperm",
+        "C. A triploid karyotype (e.g., 69, XXY) and the presence of some identifiable fetal tissues.",
+        "D. Higher beta-hCG levels than a complete mole",
+        "E. A 'snowstorm' appearance with absolutely no embryo"
+      ],
+      correct: 2,
+      exp: [
+        "A: ผิด เป็นลักษณะของ Complete mole",
+        "B: ผิด นั่นคือ Complete mole (ไข่เปล่า)",
+        "C: ถูกต้อง Partial mole เกิดจากไข่ที่ปกติ 1 ใบ (23,X) ถูกอสุจิ 2 ตัว (หรือ 1 ตัวที่โครโมโซมเกิน) เข้าผสมพร้อมกัน ทำให้ได้โครโมโซม 3 ชุด (Triploid 69, XXX/XXY/XYY) จึงมีการสร้างชิ้นส่วนทารกได้บ้าง แต่รอดชีวิตไม่ได้",
+        "D: ผิด มักจะต่ำกว่า Complete mole",
+        "E: ผิด Partial mole จะพบชิ้นส่วนทารกปนอยู่ ไม่ใช่พายุหิมะล้วน"
+      ]
+    },
+    {
+      q: "For a pregnant patient presenting with painful vaginal bleeding, a rigid, board-like abdomen, and signs of fetal distress, the underlying placental pathology is most likely:",
+      options: [
+        "A. Placenta Previa with marginal implantation",
+        "B. Premature separation of a normally implanted placenta (Placental Abruption) causing a retroplacental hematoma.",
+        "C. Velamentous cord insertion",
+        "D. Complete Hydatidiform Mole",
+        "E. Ectopic pregnancy in the ampulla"
+      ],
+      correct: 1,
+      exp: [
+        "A: ผิด เลือดออกจะไม่ปวด (Painless)",
+        "B: ถูกต้อง อาการเลือดออกร่วมกับ 'ปวดท้องรุนแรง' (Painful) และมดลูกแข็งเกร็ง (Board-like) เป็นอาการคลาสสิกของ รกลอกตัวก่อนกำหนด (Placental abruption) เลือดที่คั่งอยู่หลังรก (Retroplacental hematoma) จะซึมเข้ากล้ามเนื้อมดลูก ทำให้เกิดการระคายเคืองและปวดมดลูกอย่างหนัก",
+        "C: ผิด เลือดออกตอนน้ำเดิน ไม่ปวดมดลูก",
+        "D: ผิด ครรภ์ไข่ปลาอุก ไม่เจ็บปวดรุนแรงแบบนี้",
+        "E: ผิด ปวดท้องรุนแรง แต่ไม่มีมดลูกแข็งเกร็ง (เพราะไม่ได้ท้องในมดลูก)"
+      ]
+    }
+  ]
+};
+
+
+// State Variables
+let currentLecture = "";
+let currentQuestions = [];
+let currentQuestionIndex = 0;
+let score = 0;
+let globalScore = 0;
+let userAnswers = []; // Store user selections { qIndex, selectedOpt, isCorrect }
+
+const menuView = document.getElementById("menuView");
+const quizView = document.getElementById("quizView");
+const summaryView = document.getElementById("summaryView");
+const reviewView = document.getElementById("reviewView");
+
+// Initialize Menu
+function initMenu() {
+    const grid = document.getElementById("menuGrid");
+    grid.innerHTML = "";
+    Object.keys(db).forEach(lecName => {
+        const btn = document.createElement("button");
+        btn.className = "menu-btn";
+        btn.innerHTML = `${lecName}<br><span style="font-size:0.9rem; color:#64748b; font-weight:normal;">(${db[lecName].length} ข้อ)</span>`;
+        btn.onclick = () => startLecture(lecName);
+        grid.appendChild(btn);
+    });
+}
+
+function startLecture(lecName) {
+    currentLecture = lecName;
+    currentQuestions = db[lecName];
+    currentQuestionIndex = 0;
+    score = 0;
+    userAnswers = [];
+    
+    document.getElementById("lecTitle").innerText = lecName;
+    document.getElementById("totalQNum").innerText = currentQuestions.length;
+    
+    showView(quizView);
+    loadQuestion();
+}
+
+function loadQuestion() {
+    const q = currentQuestions[currentQuestionIndex];
+    document.getElementById("currentQNum").innerText = currentQuestionIndex + 1;
+    document.getElementById("currentScore").innerText = score;
+    document.getElementById("questionText").innerText = q.q;
+    
+    // Update progress
+    const progress = ((currentQuestionIndex) / currentQuestions.length) * 100;
+    document.getElementById("progressBar").style.width = progress + "%";
+    
+    // Render options
+    const optionsList = document.getElementById("optionsList");
+    optionsList.innerHTML = "";
+    q.options.forEach((optText, index) => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.innerText = optText;
+        btn.onclick = () => selectOption(index, btn);
+        optionsList.appendChild(btn);
+    });
+    
+    // Hide explanation and next button
+    document.getElementById("explanationBox").style.display = "none";
+    document.getElementById("nextBtnContainer").style.display = "none";
+}
+
+function selectOption(selectedIndex, btnElement) {
+    const q = currentQuestions[currentQuestionIndex];
+    const isCorrect = (selectedIndex === q.correct);
+    
+    // Save to userAnswers for review
+    userAnswers.push({
+        selected: selectedIndex,
+        correct: q.correct,
+        isCorrect: isCorrect
+    });
+    
+    if(isCorrect) {
+        btnElement.classList.add("correct");
+        score++;
+        globalScore++;
+        document.getElementById("globalScoreEl").innerText = globalScore;
+        document.getElementById("currentScore").innerText = score;
+    } else {
+        btnElement.classList.add("incorrect");
+        // highlight correct one
+        document.getElementById("optionsList").children[q.correct].classList.add("correct");
+    }
+    
+    // Disable all options
+    const allBtns = document.getElementById("optionsList").children;
+    for(let b of allBtns) { b.disabled = true; }
+    
+    // Show Explanation
+    const expBox = document.getElementById("explanationBox");
+    const expContent = document.getElementById("explanationContent");
+    expContent.innerHTML = "";
+    
+    q.exp.forEach((expText, index) => {
+        const p = document.createElement("p");
+        if(index === q.correct) {
+            p.innerHTML = `<span class="exp-correct">${expText}</span>`;
+        } else if (index === selectedIndex) {
+            p.innerHTML = `<span class="exp-incorrect">${expText}</span>`;
+        } else {
+            p.innerText = expText;
         }
+        expContent.appendChild(p);
+    });
+    
+    expBox.style.display = "block";
+    
+    // Update progress line to include this question
+    const progress = ((currentQuestionIndex + 1) / currentQuestions.length) * 100;
+    document.getElementById("progressBar").style.width = progress + "%";
+    
+    // Show next / finish button
+    const nextBtnContainer = document.getElementById("nextBtnContainer");
+    const nextBtn = document.getElementById("nextBtn");
+    if(currentQuestionIndex < currentQuestions.length - 1) {
+        nextBtn.innerText = "ข้อต่อไป (Next) \u2192";
+    } else {
+        nextBtn.innerText = "ดูผลคะแนน (Finish) \u2192";
+    }
+    nextBtnContainer.style.display = "block";
+}
 
-        function evaluateChoice(selectedKey) {
-            const part = window.examDatabase[currentPartId];
-            const q = part.questions[currentQuestionIndex];
-            const blocks = document.getElementById("options-container").children;
+function nextQuestion() {
+    if(currentQuestionIndex < currentQuestions.length - 1) {
+        currentQuestionIndex++;
+        loadQuestion();
+    } else {
+        showSummary();
+    }
+}
 
-            for(let b of blocks) { b.removeAttribute("onclick"); }
+function showSummary() {
+    showView(summaryView);
+    document.getElementById("summaryLecTitle").innerText = currentLecture;
+    document.getElementById("summaryScore").innerText = score;
+    document.getElementById("summaryTotal").innerText = currentQuestions.length;
+    
+    const percent = Math.round((score / currentQuestions.length) * 100);
+    document.getElementById("summaryPercent").innerText = percent;
+    
+    const gradeEl = document.getElementById("summaryGrade");
+    gradeEl.className = "grade-text"; // reset
+    if(percent >= 80) {
+        gradeEl.innerText = "ยอดเยี่ยม (Excellent)";
+        gradeEl.classList.add("grade-excellent");
+    } else if(percent >= 60) {
+        gradeEl.innerText = "ดี (Good)";
+        gradeEl.classList.add("grade-good");
+    } else if(percent >= 50) {
+        gradeEl.innerText = "พอใช้ (Fair)";
+        gradeEl.classList.add("grade-fair");
+    } else {
+        gradeEl.innerText = "ต้องทบทวน (Needs Review)";
+        gradeEl.classList.add("grade-needs-review");
+    }
+}
 
-            const isCorrect = selectedKey === q.correct;
-            if(isCorrect) {
-                partScore++;
-                const target = document.getElementById(`opt-${selectedKey}`);
-                target.className = "w-full text-left p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/70 flex items-start space-x-3 transition";
-                target.querySelector('span').className = "flex-shrink-0 w-6 h-6 rounded-md bg-emerald-500 text-white flex items-center justify-center font-bold text-xs";
-            } else {
-                const wrongTarget = document.getElementById(`opt-${selectedKey}`);
-                wrongTarget.className = "w-full text-left p-4 rounded-xl border-2 border-red-500 bg-red-50/70 flex items-start space-x-3 transition";
-                wrongTarget.querySelector('span').className = "flex-shrink-0 w-6 h-6 rounded-md bg-red-500 text-white flex items-center justify-center font-bold text-xs";
-                
-                const correctTarget = document.getElementById(`opt-${q.correct}`);
-                correctTarget.className = "w-full text-left p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/70 flex items-start space-x-3 transition";
-                correctTarget.querySelector('span').className = "flex-shrink-0 w-6 h-6 rounded-md bg-emerald-500 text-white flex items-center justify-center font-bold text-xs";
-            }
+function showReview() {
+    showView(reviewView);
+    const content = document.getElementById("reviewContent");
+    content.innerHTML = "";
+    
+    currentQuestions.forEach((q, idx) => {
+        const uAns = userAnswers[idx];
+        const item = document.createElement("div");
+        item.className = "review-item";
+        
+        let html = `<h4>ข้อ ${idx + 1}: ${q.q}</h4>`;
+        
+        q.options.forEach((optText, optIdx) => {
+            let cls = "review-choice ";
+            if(optIdx === q.correct && uAns.selected === optIdx) cls += "user-correct";
+            else if(optIdx === uAns.selected) cls += "user-wrong";
+            else if(optIdx === q.correct) cls += "missed-correct";
+            
+            html += `<div class="${cls}">${optText}</div>`;
+        });
+        
+        html += `<div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-top: 1rem;">`;
+        q.exp.forEach((expText, eIdx) => {
+             html += `<p style="margin:0.25rem 0; font-size:0.9rem; ${eIdx===q.correct ? 'color:var(--success);font-weight:bold;':''}">${expText}</p>`;
+        });
+        html += `</div>`;
+        
+        item.innerHTML = html;
+        content.appendChild(item);
+    });
+}
 
-            sessionReviewLogs.push({
-                title: q.text,
-                choices: q.options,
-                userAnswer: selectedKey,
-                systemAnswer: q.correct,
-                status: isCorrect,
-                rationale: q.context
-            });
+function retryLecture() {
+    // Reset global score that was added during this attempt
+    globalScore -= score; 
+    document.getElementById("globalScoreEl").innerText = globalScore;
+    startLecture(currentLecture);
+}
 
-            document.getElementById("clinical-context").innerText = q.context;
-            const breakdownBox = document.getElementById("choice-breakdowns");
-            breakdownBox.innerHTML = "";
+function backToMenu() {
+    showView(menuView);
+}
 
-            Object.keys(q.explanations).forEach(key => {
-                const node = document.createElement("div");
-                node.className = `p-3 rounded-xl text-xs leading-relaxed mb-1.5 border text-left ${key === q.correct ? 'bg-emerald-50 border-emerald-200 text-emerald-900 font-medium' : 'bg-white border-slate-200 text-slate-600'}`;
-                node.innerHTML = `<strong>ช้อยส์ ${key}:</strong> ${q.explanations[key]}`;
-                breakdownBox.appendChild(node);
-            });
+function showView(view) {
+    [menuView, quizView, summaryView, reviewView].forEach(v => v.classList.add("hidden"));
+    view.classList.remove("hidden");
+    window.scrollTo(0,0);
+}
 
-            document.getElementById("explanation-panel").classList.remove("hidden");
-            document.getElementById("current-score").innerText = `${partScore} ข้อ`;
-        }
-
-        function nextQuestion() {
-            const part = window.examDatabase[currentPartId];
-            currentQuestionIndex++;
-
-            if(currentQuestionIndex < part.questions.length) {
-                presentQuestion();
-            } else {
-                compileEvaluationMetrics();
-            }
-        }
-
-        function compileEvaluationMetrics() {
-            const part = window.examDatabase[currentPartId];
-            localStorage.setItem(`status_${currentPartId}`, "completed");
-            localStorage.setItem(`score_${currentPartId}`, partScore);
-
-            document.getElementById("quiz-view").classList.add("hidden");
-            document.getElementById("summary-view").classList.remove("hidden");
-            document.getElementById("review-details-section").classList.add("hidden");
-
-            document.getElementById("summary-score").innerText = partScore;
-            document.getElementById("summary-total").innerText = part.questions.length;
-
-            const metric = (partScore / part.questions.length) * 100;
-            const badge = document.getElementById("summary-grade");
-            const icon = document.getElementById("summary-icon-box");
-
-            if(metric >= 85) {
-                badge.innerText = " ยอดเยี่ยม (Excellent)"; badge.className = "text-lg font-bold mt-2 text-emerald-600";
-                icon.className = "inline-flex p-4 rounded-full bg-emerald-50 text-emerald-600 mb-4";
-            } else if (metric >= 70) {
-                badge.innerText = "ดีมาก (Good)"; badge.className = "text-lg font-bold mt-2 text-blue-600";
-                icon.className = "inline-flex p-4 rounded-full bg-blue-50 text-blue-600 mb-4";
-            } else if (metric >= 50) {
-                badge.innerText = "ผ่านเกณฑ์พอใช้ (Pass)"; badge.className = "text-lg font-bold mt-2 text-amber-600";
-                icon.className = "inline-flex p-4 rounded-full bg-amber-50 text-amber-600 mb-4";
-            } else {
-                badge.innerText = "ต้องทบทวนเพิ่มเติม (Needs Review)"; badge.className = "text-lg font-bold mt-2 text-red-600";
-                icon.className = "inline-flex p-4 rounded-full bg-red-50 text-red-600 mb-4";
-            }
-
-            buildHistoricalReviewAccordion();
-            recalculateGlobalScore();
-        }
-
-        function toggleReviewDetails() {
-            const container = document.getElementById("review-details-section");
-            container.classList.toggle("hidden");
-            if(!container.classList.contains("hidden")) {
-                container.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-
-        function buildHistoricalReviewAccordion() {
-            const logBox = document.getElementById("review-list-container");
-            logBox.innerHTML = "";
-
-            sessionReviewLogs.forEach((item, index) => {
-                const node = document.createElement("div");
-                node.className = "border border-slate-200 rounded-xl p-4 bg-slate-50/40 text-left";
-                
-                let rawChoices = "";
-                Object.keys(item.choices).forEach(k => {
-                    let styleRules = "border-slate-100 bg-white text-slate-700";
-                    if(k === item.systemAnswer) styleRules = "border-emerald-300 bg-emerald-50 text-emerald-900 font-bold";
-                    if(k === item.userAnswer && !item.status) styleRules = "border-red-300 bg-red-50 text-red-900";
-
-                    rawChoices += `
-                        <div class="text-xs p-2.5 rounded-lg border ${styleRules} mb-1 flex justify-between items-center">
-                            <span><strong>${k}:</strong> ${item.choices[k]}</span>
-                            ${k === item.systemAnswer ? '<span class="text-[10px] bg-emerald-500 text-white font-bold px-1.5 py-0.5 rounded">เฉลย</span>' : ''}
-                            ${k === item.userAnswer && !item.status ? '<span class="text-[10px] bg-red-500 text-white font-bold px-1.5 py-0.5 rounded">คุณตอบ</span>' : ''}
-                        </div>
-                    `;
-                });
-
-                node.innerHTML = `
-                    <div class="flex items-start space-x-2 mb-3">
-                        <span class="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded ${item.status ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}">
-                            ข้อที่ ${index + 1} • ${item.status ? 'ถูก' : 'ผิด'}
-                        </span>
-                        <h4 class="text-xs font-bold text-slate-800 leading-relaxed text-left">${item.title}</h4>
-                    </div>
-                    <div class="space-y-1 mb-2">${rawChoices}</div>
-                    <div class="bg-white p-3 rounded-lg border border-slate-200/80 text-xs text-slate-600 font-medium text-left">
-                        <span class="font-bold text-indigo-700 block mb-1">กลไกคลินิก:</span> ${item.rationale}
-                    </div>
-                `;
-                logBox.appendChild(node);
-            });
-        }
-
-        function exitToDashboard() {
-            document.getElementById("quiz-view").classList.add("hidden");
-            document.getElementById("summary-view").classList.add("hidden");
-            document.getElementById("dashboard-view").classList.remove("hidden");
-            initializeDashboard();
-        }
-
-        function restartCurrentPart() {
-            launchExamArena(currentPartId);
-        }
-    </script>
-    <script src="questions.js"></script>
+// Start
+initMenu();
+</script>
 </body>
 </html>
